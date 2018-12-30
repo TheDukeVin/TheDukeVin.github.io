@@ -12,6 +12,7 @@
 
 <canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
 
+
 <script>
 
 var canvas = document.getElementById('canvas')
@@ -342,7 +343,6 @@ function abs(x){
 function clickHandler(event){
 	mousex = event.clientX
     mousey = event.clientY
-	alert([mousex,mousey])
 	if(mousey>windy-marginy){
 		if(level<maxLevel && abs(mousex-windx/2)<100){
 			level += 1
