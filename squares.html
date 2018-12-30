@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+
+
+<body>
+<div id="nav-placeholder">
+</div>
+
+<div style="position:relative; top:50px; left:50px">
+<canvas id="canvas" width="900" height="600"></canvas>
+</div>
+<script>
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
+canvas = document.getElementById('canvas');
+ctx = canvas.getContext('2d');
+
+ 
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+ 
+boardx = 30;
+boardy = 20;
+cellS = 30;
+windx = boardx*cellS;
+windy = boardy*cellS;
+
+sTitle = 50;
+sSub = 30;
+
+numColors = 6;
+
+cBlock =  "#000000";
+cBorder = "#50a0ff";
+cPlay =   "#ffffff";
+cGoal =   "#00d000";
+cWin =    "#ffffff";
+
+colorChars = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
+directions = [ [0,1], [0,-1], [1,0], [-1,0] ];
+var keyMove = [115,119,100,97];
+
+pi = Math.PI;
+
+function randint(max){
+	return Math.floor(Math.random()*max);
+}
+ 
+function randomColor(){
+	str = "#";
+    for(i = 0; i<6; i++){
+    	str += colorChars[randint(16)];
+    }
+    return str;
+}
+ 
+colors = [];
+for(r = 0; r < numColors; r++){
+	colors.push(randomColor());
+}
+ 
+function blank(){
+    board = [];
+    for(i = 0;i < boardx;i++){
+    	row = [];
+        for(j = 0; j < boardy; j++){
+        	row.push(0);
+        }
+        board.push(row);
+    }
+    for(i = 0; i < boardx; i++){
+    	board[i][0] = -1;
+        board[i][boardy-1] = -1;
+    }
+    for(i = 0; i < boardy; i++){
+    	board[0][i] = -1;
+        board[boardx-1][i] = -1;
+    }
+    return board;
+}
+
+function protoBoard(labels){
+	sx = Math.floor(boardx/2);
+    sy = Math.floor(boardy/2);
+    sb = blank();
+    while(true){
+    	sb[sx][sy] += 1;
+        moves = [];
+        for(i = 0; i < 4; i++){
+        	px = sx + directions[i][0];
+            py = sy + directions[i][1];
+            cell = sb[px][py];
+            if(cell != -1 && cell<labels){
+            	moves.push([px,py]);
+            }
+        }
+        if(moves.length == 0){
+        	break;
+        }
+        n = moves[randint(moves.length)];
+        nx = n[0];
+        ny = n[1];
+        sx = nx;
+        sy = ny;
+    }
+    return sb;
+}
+
+function copy(board){
+	dup = [];
+    for(i = 0;i < boardx;i++){
+    	row = [];
+        for(j = 0; j < boardy; j++){
+        	row.push(board[i][j]);
+        }
+        dup.push(row);
+    }
+    return dup;
+}
+
+function space(board){
+    num = 0;
+    for( i = 0; i < boardx; i++){
+        for (j = 0; j < boardy; j++){
+            if (board[i][j] > 0){
+                num+=1;
+            }
+        }
+    }
+    return num;
+}
+
+function win(board){
+	return space(board) == 1;
+}
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color;
+	ctx.fillRect(sx,sy,l,w);
+}
+
+function drawLine(color,p1x,p1y,p2x,p2y){
+	ctx.strokeStyle = color;
+	ctx.beginPath();
+	ctx.moveTo(p1x,p1y);
+    ctx.lineTo(p2x,p2y);
+    ctx.stroke();
+}
+
+function fillCirc(color,x,y,r){
+	ctx.beginPath();
+	ctx.arc(x,y,r,0,2*pi);
+	ctx.fillStyle = color;
+	ctx.fill();
+}
+
+function fillText(text,color,size,x,y){
+	ctx.font = String(size)+"px Arial";
+	ctx.fillStyle = color;
+	ctx.textAlign = "center";
+	ctx.fillText(text,x,y);
+}
+
+function drawBoard(board){
+	for(i = 0; i < boardx; i++){
+    	for(j = 0; j < boardy; j++){
+        	cell = board[i][j];
+            color = cBorder;
+            if(cell > 0){
+            	color = colors[cell-1];
+            }
+            if(cell == 0){
+            	color = cBlock;
+            }
+        	fillRect(color,i*cellS,j*cellS,cellS,cellS);
+        }
+    }
+}
+
+function drawChar(xpos,ypos){
+	fillCirc(cPlay,xpos*cellS+cellS/2,ypos*cellS+cellS/2,cellS/3);
+}
+
+function drawGoal(xpos,ypos){
+	fillCirc(cGoal,xpos*cellS+cellS/2,ypos*cellS+cellS/2,cellS/3);
+}
+
+function drawWin(){
+	fillText("Solved",cWin,cellS*2,windx/2,windy/2);
+    fillText("Click on the screen to continue.",cWin,cellS,windx/2,windy/2+cellS*2);
+}
+
+function title(){
+	fillRect(cBlock,0,0,windx,windy);
+	fillText("Squares",cWin,sTitle,windx/2,sTitle);
+    for(i = 0; i < numColors; i++){
+    	fillText("Labels: "+(i+1),cWin,sSub,windx/2,sTitle*2+i*sSub*3/2);
+        fillRect(colors[i],windx/2-sSub*3,2*sTitle+(i-0.5)*sSub*3/2,sSub*2/3,sSub*2/3);
+    }
+}
+
+function drawSelect(label){
+	drawLine(colors[label-1],0,2*sTitle+(label-1.5)*sSub*3/2,windx,2*sTitle+(label-1.5)*sSub*3/2);
+    drawLine(colors[label-1],0,2*sTitle+(label-0.75)*sSub*3/2,windx,2*sTitle+(label-0.75)*sSub*3/2);
+}
+
+function drawContinue(){
+	fillText("Press p to play",cWin,sSub,windx/2,windy-sSub);
+}
+
+addEventListener("keypress",keyHandler);
+canvas.addEventListener("click",clickHandler);
+
+mode = 0;
+selected = false;
+labels = 1;
+
+//mode: 0 = choosing, 1 = playing
+
+function keyHandler(event){
+	key = event.keyCode;
+	if(mode == 0){
+    	if(key == 112){
+            mode = 1;
+            solved = false;
+            ref = protoBoard(labels);
+            board = copy(ref);
+            charx = Math.floor(boardx/2);
+            chary = Math.floor(boardy/2);
+            drawBoard(board);
+            drawChar(charx,chary);
+        }
+    }
+	if(mode == 1){
+        for(i = 0; i < 4; i++){
+            if(keyMove[i] == key){
+                d = directions[i];
+                dx = d[0];
+                dy = d[1];
+                if(board[charx+dx][chary+dy] > 0){
+                    board[charx][chary] -= 1;
+                    charx += dx;
+                    chary += dy;
+                }
+            }
+        }
+        drawBoard(board);
+        drawChar(charx,chary);
+        if(win(board)){
+            drawWin();
+            solved = true;
+        }
+        if(key == 114){
+            board = copy(ref);
+            charx = Math.floor(boardx/2);
+            chary = Math.floor(boardy/2);
+            drawBoard(board);
+            drawChar(charx,chary);
+        }
+    }
+}
+
+function clickHandler(event){
+	rect = canvas.getBoundingClientRect();
+    x = event.clientX - rect.left;
+    y = event.clientY - rect.top;
+	if(mode == 0){
+    	row = Math.floor((y-sTitle)/(sSub*3/2)+1/2);
+        if(row>0 && row<=numColors){
+        	selected = true;
+            labels = row;
+            title();
+            drawSelect(labels);
+            drawContinue();
+        }
+    }
+	if(mode == 1){
+        if(solved){
+        	mode = 0;
+            title();
+            selected = false;
+        }
+    }
+}
+
+title();
+
+</script>
+
+</body>
+
+</html>

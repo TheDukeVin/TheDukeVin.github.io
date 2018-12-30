@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+
+<body>
+<div id="nav-placeholder">
+</div>
+<canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
+
+
+<script>
+
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
