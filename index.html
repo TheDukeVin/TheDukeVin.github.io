@@ -2,9 +2,15 @@
 
 <html>
 
+<head>
+<title> The Duke Vin </title>
+<script>
+</script>
+</head>
+
 <body>
 
-<canvas id="canvas" width="770" height="770">
+<canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
 
 <script>
 
@@ -301,7 +307,7 @@ setLevel(level)
 
 document.addEventListener("keydown",keydownHandler);
 document.addEventListener("keyup",keyupHandler);
-canvas.addEventListener("click",clickHandler);
+document.addEventListener("click",clickHandler);
 
 
 function keydownHandler(event){
@@ -334,8 +340,9 @@ function abs(x){
 }
 
 function clickHandler(event){
-	mousex = event.clientX;
-    mousey = event.clientY;
+	mousex = event.clientX
+    mousey = event.clientY
+	alert([mousex,mousey])
 	if(mousey>windy-marginy){
 		if(level<maxLevel && abs(mousex-windx/2)<100){
 			level += 1
