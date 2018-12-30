@@ -348,8 +348,9 @@ function abs(x){
 }
 
 function clickHandler(event){
-	mousex = event.clientX
-    mousey = event.clientY
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
 	if(mousey>windy-marginy){
 		if(level<maxLevel && abs(mousex-windx/2)<100){
 			level += 1
