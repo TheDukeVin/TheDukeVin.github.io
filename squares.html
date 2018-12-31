@@ -5,6 +5,17 @@
 <head>
 <title> The Duke Vin </title>
 <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<style>
+h2 {
+	margin-left: 50px;
+	font-family: "Calibri"
+}
+
+p {
+	margin-left: 50px;
+	font-family: "Calibri"
+}
+</style>
 </head>
 
 
@@ -12,9 +23,18 @@
 <div id="nav-placeholder">
 </div>
 
-<div style="position:relative; top:50px; left:50px">
-<canvas id="canvas" width="900" height="600"></canvas>
+<div>
+<canvas id="canvas" width="900" height="600" style="position:relative; top:50px; left:50px"></canvas>
 </div>
+
+<br><br>
+
+<h2> How to play </h2>
+
+<p>
+Select the number of labels (the difficulty) of the game and <b>press p</b>. Use the <b>arrow keys</b> to move. The goal is to <b>empty the entire track</b> (make everything black). <b>Press r</b> to restart.
+</p>
+
 <script>
 $(function(){
   $("#nav-placeholder").load("nav.html");
@@ -46,7 +66,7 @@ cWin =    "#ffffff";
 
 colorChars = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];
 directions = [ [0,1], [0,-1], [1,0], [-1,0] ];
-var keyMove = [115,119,100,97];
+var keyMove = ["ArrowDown","ArrowUp","ArrowRight","ArrowLeft"];
 
 pi = Math.PI;
 
@@ -216,8 +236,8 @@ function drawContinue(){
 	fillText("Press p to play",cWin,sSub,windx/2,windy-sSub);
 }
 
-addEventListener("keypress",keyHandler);
-canvas.addEventListener("click",clickHandler);
+document.addEventListener("keydown",keyHandler);
+document.addEventListener("click",clickHandler);
 
 mode = 0;
 selected = false;
@@ -226,9 +246,10 @@ labels = 1;
 //mode: 0 = choosing, 1 = playing
 
 function keyHandler(event){
-	key = event.keyCode;
+	key = event.code
+    event.preventDefault()
 	if(mode == 0){
-    	if(key == 112){
+    	if(key == "KeyP"){
             mode = 1;
             solved = false;
             ref = protoBoard(labels);
@@ -258,7 +279,7 @@ function keyHandler(event){
             drawWin();
             solved = true;
         }
-        if(key == 114){
+        if(key == "KeyR"){
             board = copy(ref);
             charx = Math.floor(boardx/2);
             chary = Math.floor(boardy/2);
