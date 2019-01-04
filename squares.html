@@ -10,8 +10,7 @@
 
 
 <body>
-<div id="nav-placeholder">
-</div>
+<div id="nav-placeholder"></div>
 
 <h1> Squares </h1>
 
@@ -24,7 +23,13 @@
 <h2> How to play </h2>
 
 <p>
-Select the number of labels (the difficulty) of the game and <b>press p</b>. Use the <b>arrow keys</b> to move. The goal is to <b>empty the entire track</b> (make everything black). <b>Press r</b> to restart.
+Select the number of labels (the difficulty) of the game and <b>press p</b>. You will receive a randomly generated level. Use the <b>arrow keys</b> to move. The goal is to <b>empty the entire track</b> (make everything black). <b>Press r</b> to restart.
+</p>
+
+<h2> How I made this game </h2>
+
+<p>
+You might have noticed that both the colors and the levels in this game are randomly generated. The colors are easy; it's the levels that are interesting. The way my program generates levels is surprisingly straightforward: it simply simulates the character randomly moving until it gets stuck, and uses the path it took as a level that is presented to the player. This may seem like cheating, but it makes some very interesting levels.
 </p>
 
 <script>
