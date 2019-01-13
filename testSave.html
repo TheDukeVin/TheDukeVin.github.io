@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<div id="nav-placeholder"></div>
+
+<canvas id="canvas" width="5000" height="5000"> Your Browser does not support canvases :( </canvas>
+
+
+<script>
+
+$(function(){
+  $("#nav-placeholder").load("nav.html")
+});
+
+var canvas = document.getElementById('canvas')
+var ctx = canvas.getContext('2d')
+pi = Math.PI
+array = localStorage.getItem("thedukevindatastore")
+if(array != null){
+	hello = array
+}
+else{
+	hello = []
+}
+alert(hello)
+
+document.addEventListener("click",clickHandler)
+
+cDots = "#000"
+
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function drawDots(){
+	for(i=0; i<hello.length; i++){
+		fillCirc(cDots,hello[i][0],hello[i][1],5)
+	}
+}
+
+function clickHandler(event){
+	rect = canvas.getBoundingClientRect()
+    mousex = event.clientX - rect.left
+    mousey = event.clientY - rect.top
+	hello[hello.length] = [mousex,mousey]
+	drawDots()
+	localStorage.setItem("thedukevindatastore", hello)
+}
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
