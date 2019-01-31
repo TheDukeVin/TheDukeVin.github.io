@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div id="nav-placeholder"></div>
+
+<h1> Door Puzzle 2 - Platformer</h1>
+
+<canvas id="canvas" width="700" height="700"> Your Browser does not support canvases :( </canvas>
+
+<h2> How to play </h2>
+
+<p>
+See <a href="https://thedukevin.github.io/index.html">Door Puzzle</a>.
+</p>
+
+<script>
+
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
+var canvas = document.getElementById('canvas')
+var ctx = canvas.getContext('2d')
+
+windx = 700
+windy = 700
+wallThick = 10
+charSize = 20
+
+goalSize = 80
+navSize = 20
+
+g = 0.03
+xacc = 0.05
+xfric = 0.95
+bounce = 0.8
+
+jump = 2.5
+wait = 0.002
+
+numColors = 5
+
+pi = Math.PI
+
+
+colors = ["#f00","#0f0","#00f","#d0d","#000"]
+lit = ["#f88","#8f8","#88f","#f8f","#000"]
+cChars = ["#f7d","#0aa","#aa0"]
+
+BG = "#fff"
+text = "#000"
+select = "#fff"
+unselect = "#000"
+cGoal = "#cfc"
+charBorder = "#000"
+
+numLevels = 5
+
+segmentsA = [[[[50,400],[650,400],4],
+              [[300,400],[300,270],0]],
+             [[[300,160],[300,300],4],
+              [[100,300],[295,300],1],
+              [[300,300],[300,400],0],
+              [[150,400],[450,400],4],
+              [[300,250],[480,250],4]],
+             [[[50,400],[650,400],4],
+              [[300,400],[300,180],0]],
+             [[[0,270],[150,270],4],
+              [[0,500],[700,500],4],
+              [[250,270],[700,270],4],
+              [[150,270],[250,270],3],
+              [[350,275],[350,330],2],
+              [[350,330],[350,410],4],
+              [[350,410],[350,500],1],
+              [[0,360],[100,360],4],
+              [[100,360],[200,360],0],
+              [[200,360],[350,360],4],
+              [[346,410],[400,410],4],
+              [[400,410],[500,410],3],
+              [[500,410],[700,410],4]],
+			 [[[50,650],[650,650],4],
+              [[50,650],[50,390],4],
+              [[650,650],[650,390],4],
+              [[250,650],[250,520],3],
+              [[450,650],[450,520],3],
+              [[50,520],[150,520],1],
+              [[150,520],[250,520],4],
+              [[250,520],[350,520],2],
+              [[350,520],[450,520],2],
+              [[450,520],[650,520],4],
+              [[350,520],[350,390],1],
+              [[50,390],[150,390],0],
+              [[150,390],[550,390],4],
+              [[550,390],[650,390],4]]]
+switchesA = [[[[400,380],0]],
+             [[[250,370],0],
+              [[400,370],0],
+              [[200,370],1],
+              [[400,230],1]],
+             [[[400,380],0]],
+             [[[100,240],3],
+              [[300,480],0],
+              [[280,340],1],
+              [[150,340],2],
+              [[500,480],2],
+              [[600,380],3]],
+             [[[230,480],0],
+              [[300,370],2],
+              [[500,485],2],
+              [[100,625],1],
+              [[350,625],3],
+              [[550,625],3],
+              [[450,485],3]]]
+goalA = [[500,370],[400,400],[500,370],[550,185],[600,600]]
+charsA = [2,2,2,3,3]
+positionsA = [[[100,200],[100,240]],
+              [[150,150],[150,50]],
+              [[100,200],[100,240]],
+              [[100,474],[100,433],[100,392]],
+              [[100,490],[150,490],[200,490]]]
+
+
+move = [[0,1],[0,-1],[1,0],[-1,0]]
+//keyMove = ["KeyS","KeyW","KeyD","KeyA"]
+keyMove = ["ArrowUp","ArrowRight","ArrowLeft"]
+charKeys = ["Digit1","Digit2","Digit3"]
+
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color
+	ctx.fillRect(sx,sy,l,w)
+}
+ 
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function fillText(text,color,size,x,y){
+	ctx.font = String(size)+"px Arial"
+	ctx.fillStyle = color
+	ctx.textAlign = "center"
+	ctx.fillText(text,x,y)
+}
+
+function fillLine(color,sx,sy,ex,ey){
+	ctx.beginPath()
+	ctx.lineWidth = wallThick
+	ctx.strokeStyle = color
+	ctx.moveTo(sx,sy)
+	ctx.lineTo(ex,ey)
+	ctx.stroke()
+}
+
+
+function drawBoard(){
+	fillRect(BG,0,0,windx,windy)
+	fillCirc(cGoal,goal[0],goal[1],goalSize)
+	for(i=0; i<segments.length; i++){
+        segType = segments[i][2]
+		if(switched[segType]){
+            color = lit[segType]
+		}
+		else{
+            color = colors[segType]
+		}
+		sp = segments[i][0]
+		ep = segments[i][1]
+		fillLine(color,sp[0],sp[1],ep[0],ep[1])
+	}
+	for(i=0; i<switches.length; i++){
+		s = switches[i]
+		fillCirc(colors[s[1]],s[0][0],s[0][1],5)
+	}
+}
+
+
+function drawChars(){
+	for(i=0; i<chars; i++){
+		x = positions[i][0]
+		y = positions[i][1]
+		fillCirc(charBorder,x,y,charSize+1)
+    	fillCirc(cChars[i],x,y,charSize)
+		color = unselect
+		if(i == currChar){
+			color = select
+		}
+		fillText((i+1).toString(),color,charSize,x,y+7)
+    }
+}
+
+marginy = 40
+function drawNav(){
+	if(level>0){
+		fillText("Previous Level",text,navSize,100,windy-marginy/2)
+	}
+	if(level<maxLevel){
+		fillText("Next Level",text,navSize,windx/2,windy-marginy/2)
+	}
+	fillText("Restart Level",text,navSize,windy-100,windy-marginy/2)
+	fillText("Level "+(level+1).toString(),text,50,windx/2,marginy)
+}
+
+function drawWin(){
+	fillText("Yay!",text,50,windx/2,windy/2)
+}
+
+
+function drawText(){
+	for(i=0; i<gameText[level].length; i++){
+		fillText(gameText[level][i][0],text,textSize,gameText[level][i][1][0],gameText[level][i][1][1])
+	}
+}
+
+function absv(x){
+	if(x<0){
+		return -x
+	}
+	return x
+}
+
+function free(c){
+    pos = positions[c]
+	for(i2=0; i2<segments.length; i2++){
+		seg = segments[i2]
+		if(switched[seg[2]]){
+			continue
+		}
+        u1 = seg[1][0]-seg[0][0]
+        u2 = seg[1][1]-seg[0][1]
+		d = Math.pow(u1*u1+u2*u2,0.5)
+        x1 = pos[0]-seg[0][0]
+        x2 = pos[1]-seg[0][1]
+        v1 = x1*(u1/d) + x2*(u2/d)
+        v2 = x2*(u1/d) - x1*(u2/d)
+        if (absv(v2) > charSize+wallThick/2){
+			continue
+		}
+        if(v1 < -charSize){
+			continue
+		}
+        if(v1 > d + charSize){
+			continue
+		}
+		return false
+	}
+	for(i2=0; i2<chars; i2++){
+		if(i2 == c){
+			continue
+		}
+        u1 = positions[i2][0] - pos[0]
+        u2 = positions[i2][1] - pos[1]
+		if(u1*u1+u2*u2 < 4*charSize*charSize){
+			return false
+		}
+	}
+	return true
+}
+
+
+var segments,chars,positions,vel,switches,goal,currChar,switched,level,maxLevel
+
+pressed = [false,false,false,false]
+switched = new Array(numColors)
+for(i=0; i<numColors; i++){
+	switched[i] = false
+}
+
+function setLevel(level){
+    segments = segmentsA[level]
+    chars = charsA[level]
+    switches = switchesA[level]
+	goal = goalA[level]
+    positions = new Array(chars)
+	vel = new Array(chars)
+	touch = new Array(chars)
+	for(i=0; i<chars; i++){
+    	positions[i] = new Array(2)
+    	positions[i][0] = positionsA[level][i][0]
+        positions[i][1] = positionsA[level][i][1]
+		vel[i] = [0,0]
+		touch[i] = false
+	}
+    currChar = 0
+	pLevel = level
+    won = false
+	wonUpdate = false
+}
+
+
+
+level = 0
+maxLevel = level
+setLevel(level)
+
+
+
+document.addEventListener("keydown",keydownHandler);
+document.addEventListener("keyup",keyupHandler);
+canvas.addEventListener("click",clickHandler);
+
+
+function keydownHandler(event){
+	key = event.code;
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	pressed[i] = true;
+		}
+	}
+    for(i=0; i<chars; i++){
+    	if(charKeys[i] == key){
+        	currChar = i
+        }
+    }
+}
+
+function keyupHandler(event){
+	key = event.code;
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	pressed[i] = false;
+		}
+	}
+}
+
+function abs(x){
+	if(x<0){return -x}
+	return x
+}
+
+function clickHandler(event){
+	mousex = event.clientX;
+    mousey = event.clientY;
+	if(mousey>windy-marginy){
+		if(level<maxLevel && abs(mousex-windx/2)<100){
+			level += 1
+			setLevel(level)
+		}
+		if(level>0 && mousex<200){
+			level -= 1
+			setLevel(level)
+		}
+		if(mousex>windy-200){
+			setLevel(level)
+		}
+	}
+}
+
+
+ 
+function update(){
+	if(pressed[1]){
+		vel[currChar][0] += xacc
+	}
+	if(pressed[2]){
+		vel[currChar][0] -= xacc
+	}
+	if(pressed[0] && touch[currChar]){
+		vel[currChar][1] = -jump
+	}
+	for(i=0; i<chars; i++){
+		positions[i][0] += vel[i][0]
+		if(!free(i)){
+			positions[i][0] -= vel[i][0]
+			vel[i][0] = 0
+		}
+		positions[i][1] += vel[i][1]
+		if(!free(i)){
+			positions[i][1] -= vel[i][1]
+			vel[i][1] = 0
+		}
+        vel[i][1] += g
+        vel[i][0] *= xfric
+		positions[i][1] += 1
+		touch[i] = !free(i)
+		positions[i][1] -= 1
+	}
+	for(i=0; i<numColors; i++){
+		switched[i] = false
+	}
+	for(i=0; i<chars; i++){
+		pos = positions[i]
+		for(j=0; j<switches.length; j++){
+			s = switches[j]
+			u1 = s[0][0]-pos[0]
+			u2 = s[0][1]-pos[1]
+			if(u1*u1+u2*u2 < charSize*charSize){
+				switched[s[1]] = true
+			}
+		}
+	}
+	won = true
+	for(i=0; i<chars; i++){
+		pos = positions[i]
+		u1 = goal[0]-pos[0]
+		u2 = goal[1]-pos[1]
+		if(u1*u1+u2*u2 > goalSize*goalSize){
+			won = false
+		}
+	}
+	if(won && level == maxLevel && !wonUpdate){
+		maxLevel += 1
+		wonUpdate = true
+	}
+	drawBoard()
+	drawChars()
+	drawNav()
+	if(won){
+		drawWin()
+	}
+}
+ 
+var ONE_FRAME_TIME = 1000 / 240 ;
+var mainloop = function() {
+	update()
+};
+setInterval( mainloop, ONE_FRAME_TIME );
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
