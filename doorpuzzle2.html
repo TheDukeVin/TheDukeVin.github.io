@@ -311,7 +311,7 @@ function setLevel(level){
 
 
 
-storeLevel = localStorage.getItem("thedukevindatastoreDoorPuzzleLevel")
+storeLevel = localStorage.getItem("thedukevindatastoreDoorPuzzle2Level")
 if(storeLevel == null){
 	level = 0
 }
@@ -431,7 +431,7 @@ function update(){
 	if(won && level == maxLevel && !wonUpdate){
 		maxLevel += 1
 		wonUpdate = true
-		localStorage.setItem("thedukevindatastoreDoorPuzzleLevel", maxLevel)
+		localStorage.setItem("thedukevindatastoreDoorPuzzle2Level", maxLevel)
 	}
 	drawBoard()
 	drawChars()
