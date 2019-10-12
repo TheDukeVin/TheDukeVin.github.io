@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<div id="nav-placeholder"></div>
+
+<h1> Box Puzzle </h1>
+
+
+<canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
+
+<h2> How to play </h2>
+
+<p>
+Press the <b>arrow keys</b> to move the character. The goal is to get <b>all</b> boxes onto an X.
+</p>
+
+
+<script>
+
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
+var canvas = document.getElementById('canvas')
+var ctx = canvas.getContext('2d')
+
+windx = 770
+windy = 770
+charSize = 20
+
+navSize = 20
+
+
+pi = Math.PI
+
+
+BG = "#000"
+text = "#000"
+space = "#fff"
+
+nonColorBox = "#c60"
+nonColorX = "#000"
+cChar = "#f33"
+cWin = "#00f"
+
+numLevels = 5
+
+boardxA = [7,7,8,8,8]
+boardyA = [7,7,8,9,8]
+cellSizeA = [50,50,50,50,50]
+coloredA = [false,false,false,false,false]
+
+roomA = [[[1, 1, 1, 1, 1, 1, 1],
+          [1,10, 0, 0, 0, 0, 1],
+          [1, 0, 0,11, 0, 0, 1],
+          [1, 1, 0, 1, 1, 1, 1],
+          [1, 0, 0, 0,12, 0, 1],
+          [1, 0, 0, 0, 0,10, 1],
+          [1, 1, 1, 1, 1, 1, 1]],
+		 [[0, 1, 1, 1, 1, 1, 1],
+		  [1, 1, 0, 0, 0, 0, 1],
+		  [1, 0, 0, 1, 1,10, 1],
+		  [1, 0,11,10, 0, 0, 1],
+		  [1, 1, 0,12, 0, 0, 1],
+		  [0, 1, 1, 0, 0, 1, 1],
+		  [0, 0, 1, 1, 1, 1, 0]],
+		 [[1, 1, 1, 1, 0, 0, 0, 0],
+		  [1, 0, 0, 1, 1, 1, 1, 0],
+		  [1, 0, 0, 1, 0, 0, 1, 1],
+		  [1, 0, 0, 1, 0,11, 0, 1],
+		  [1, 0, 0, 1, 0,12, 0, 1],
+		  [1, 0, 0,10, 0,10, 1, 1],
+		  [1, 1, 0, 0, 1, 1, 1, 0],
+		  [0, 1, 1, 1, 1, 0, 0, 0]],
+		 [[1, 1, 1, 1, 1, 1, 1, 1, 1],
+		  [1, 0, 0,10, 1, 0, 0, 0, 1],
+		  [1, 0, 0, 0, 0, 0, 0, 0, 1],
+		  [1, 1, 1,10, 1, 1, 0, 1, 1],
+		  [0, 1, 0, 0, 1, 0,11, 1, 0],
+		  [0, 1, 0, 0,12, 0, 0, 1, 0],
+		  [0, 1, 0, 0, 1, 0, 0, 1, 0],
+		  [0, 1, 1, 1, 1, 1, 1, 1, 0]],
+		 [[0, 0, 0, 0, 1, 1, 1, 1],
+		  [0, 0, 1, 1, 1, 0, 0, 1],
+		  [1, 1, 1, 0, 0, 0, 0, 1],
+		  [1, 0,11, 0, 1, 0, 0, 1],
+		  [1, 0,12, 0, 1,10, 1, 1],
+		  [1, 1, 0, 0, 0, 0, 0, 1],
+		  [0, 1, 1, 0,10, 0, 0, 1],
+		  [0, 0, 1, 1, 1, 1, 1, 1]]]
+startA = [[4,5],[4,2],[4,6],[2,7],[3,1]]
+
+move = [[0,1],[0,-1],[1,0],[-1,0]]
+//keyMove = ["KeyS","KeyW","KeyD","KeyA"]
+keyMove = ["ArrowDown","ArrowUp","ArrowRight","ArrowLeft"]
+charKeys = ["Digit1","Digit2","Digit3","Digit4"]
+
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color
+	ctx.fillRect(sx,sy,l,w)
+}
+ 
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function fillText(text,color,size,x,y){
+	ctx.font = String(size)+"px Arial"
+	ctx.fillStyle = color
+	ctx.textAlign = "center"
+	ctx.fillText(text,x,y)
+}
+
+function fillLine(color,width,sx,sy,ex,ey){
+	ctx.beginPath()
+	ctx.lineWidth = width
+	ctx.strokeStyle = color
+	ctx.moveTo(sx,sy)
+	ctx.lineTo(ex,ey)
+	ctx.stroke()
+}
+
+function fillX(width,x,y){
+	fillLine(nonColorX, width, marginx+x*cellSize, marginy+y*cellSize, marginx+(x+1)*cellSize, marginy+(y+1)*cellSize)
+	fillLine(nonColorX, width, marginx+(x+1)*cellSize, marginy+y*cellSize, marginx+x*cellSize, marginy+(y+1)*cellSize)
+}
+
+function drawBoard(){
+	fillRect(space,0,0,windx,windy)
+	for(i=0; i<boardx; i++){
+		for(j=0; j<boardy; j++){
+			cell = room[i][j]
+			if(cell == 1){
+				fillRect(BG,marginx+i*cellSize,marginy+j*cellSize,cellSize,cellSize)
+			}
+			if(!colored){
+				if(10<cell){
+					fillRect(nonColorBox, marginx+i*cellSize+cellSize/4, marginy+j*cellSize+cellSize/4, cellSize/2, cellSize/2)
+				}
+				if(cell == 10){
+					fillX(4,i,j)
+				}
+				if(cell > 20){
+					fillX(2,i,j)
+				}
+			}
+		}
+	}
+}
+
+function drawChar(){
+	fillCirc(cChar, marginx+pos[0]*cellSize+cellSize/2, marginy+pos[1]*cellSize+cellSize/2, cellSize/3)
+}
+
+function drawNav(){
+	if(level>0){
+		fillText("Previous Level",text,navSize,100,windy-marginy/2)
+	}
+	if(level<maxLevel){
+		fillText("Next Level",text,navSize,windx/2,windy-marginy/2)
+	}
+	fillText("Restart Level",text,navSize,windy-100,windy-marginy/2)
+	fillText("Level "+(level+1).toString(),text,50,windx/2,marginy/2)
+}
+
+function drawWin(){
+	fillText("Yay!",cWin,50,windx/2,windy/2)
+}
+
+
+
+var boardx,boardy,marginx,marginy,cellSize,room,start
+
+function setLevel(level){
+	boardx = boardxA[level]
+	boardy = boardyA[level]
+	cellSize = cellSizeA[level]
+	marginx = (windx-boardx*cellSize)/2
+	marginy = (windy-boardy*cellSize)/2
+	room = []
+	for(i=0; i<boardx; i++){
+		room[i] = []
+		for(j=0; j<boardy; j++){
+			room[i][j] = roomA[level][i][j]
+		}
+	}
+	pos = [startA[level][0], startA[level][1]]
+	colored = coloredA[level]
+}
+
+function won(){
+	if(!colored){
+		for(i=0; i<boardx; i++){
+			for(j=0; j<boardy; j++){
+				if(10<room[i][j] && room[i][j] < 20){
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+
+storeLevel = localStorage.getItem("thedukevindatastoreBoxPuzzleLevel")
+if(storeLevel == null){
+	level = 0
+}
+else{
+	level = parseInt(storeLevel)
+}
+if(level >= numLevels){
+	level = numLevels-1
+}
+maxLevel = level
+setLevel(level)
+/*
+storeLevel = maxLevel = 4
+level = 0
+setLevel(0)
+*/
+
+document.addEventListener("keydown",keydownHandler);
+document.addEventListener("keyup",keyupHandler);
+document.addEventListener("click",clickHandler);
+
+
+function keydownHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	dx = move[i][0]
+			dy = move[i][1]
+			valid = true
+			upblock = room[pos[0]+dx][pos[1]+dy]
+			if(upblock == 1){
+				valid = false
+			}
+			if(upblock>10){
+				up2block = room[pos[0]+2*dx][pos[1]+2*dy] 
+				if(up2block == 1 || (up2block>10)){
+					valid = false
+				}
+			}
+			if(valid){
+				pos[0] += dx
+				pos[1] += dy
+				if(10<upblock){
+					room[pos[0]][pos[1]] -= 10+upblock%10
+					room[pos[0]+dx][pos[1]+dy] += 10+upblock%10
+				}
+			}
+		}
+	}
+}
+
+function keyupHandler(event){
+	
+}
+
+function abs(x){
+	if(x<0){return -x}
+	return x
+}
+
+function clickHandler(event){
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+	if(mousey>windy-marginy){
+		if(level<maxLevel && abs(mousex-windx/2)<100){
+			level += 1
+			setLevel(level)
+		}
+		if(level>0 && mousex<200){
+			level -= 1
+			setLevel(level)
+		}
+		if(mousex>windy-200){
+			setLevel(level)
+		}
+	}
+}
+
+
+ 
+function update(){
+	drawBoard()
+	drawChar()
+	drawNav()
+	if(won()){
+		drawWin()
+		if(level == maxLevel && level != numLevels-1){
+			maxLevel = level+1
+			localStorage.setItem("thedukevindatastoreBoxPuzzleLevel", maxLevel)
+		}
+	}
+}
+ 
+var ONE_FRAME_TIME = 1000 / 240 ;
+var mainloop = function() {
+	update()
+};
+setInterval( mainloop, ONE_FRAME_TIME );
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+

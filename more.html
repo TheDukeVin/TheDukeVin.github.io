@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<div id="nav-placeholder"></div>
+
+<h1> More Door Puzzle </h1>
+
+<p>
+Original Game <a href="https://thedukevin.github.io">Door Puzzle</a>.
+</p>
+
+<canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
+
+<h2> How to play </h2>
+
+<p>
+Press the <b>arrow keys</b> to move the characters. Press <b>1 and 2 keys</b> to switch between the characters. The goal is to get <b>all</b> characters into the <b>green zone</b>.
+</p>
+
+
+<script>
+
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
+var canvas = document.getElementById('canvas')
+var ctx = canvas.getContext('2d')
+
+wallThick = 10
+switchSize = 40
+border = 10
+windx = 770
+windy = 770
+charSize = 20
+speed = 1
+
+navSize = 20
+textSize = 15
+
+numColors = 7
+
+pi = Math.PI
+
+
+colors = ["#f00","#0f0","#00f","#d0d","#0ff","#000","#fff"]
+lit = ["#f88","#8f8","#88f","#f8f","#aff","#000","#fff"]
+cChars = ["#f7d","#5dd","#dd0","#9f9"]
+BG = "#000"
+text = "#000"
+space = "#fff"
+select = "#fff"
+cGoal = "#cfc"
+
+numLevels = 2
+
+boardxA = [3,4]
+boardyA = [3,3]
+charsA  = [3,4]
+
+hWallsA = [[[6,3,4],[3,2,2]],
+           [[0,3,4,4],[2,5,2,3]],
+           [[3,5],[2,3]],
+           [[5,0],[2,3]],
+           [[1,2],[0,1],[2,3]],
+           [[1,0,2]],
+           [[1,2,1],[2,3,3]],
+           [[0,3,0,1]],
+           [[1,3,1],[2,3,3]],
+           [[2,0,1],[2,3,3]],
+		   [[5,3,4],[3,5,1]],
+           [[6,6,6],[6,6,5]]]
+
+vWallsA = [[[0,1,0],[1,3,3]],
+           [[0,2,0],[1,1,4],[1,1,3]],
+           [[0,0,3]],
+           [[0,2,3]],
+           [[0,0,3,2]],
+           [[1,2],[1,0]],
+           [[0,0,3],[0,1,2]],
+           [[3,2],[2,6],[2,3]],
+           [[0,0,3],[2,1,5]],
+           [[0,0,3],[2,1,2]],
+		   [[0,2,0],[1,3,3]],
+           [[6,6,6],[6,6,5]]]
+
+switchesA = [[[[0],[],[2]],[[1],[],[2]],[[4],[0],[3]]],
+             [[[0],[],[4],[3]],[[1],[],[],[4]],[[2],[0],[],[3]]],
+             [[[0],[3]],[[],[]],[[2],[3]]],
+             [[[0],[3]],[[0],[]],[[2],[3]]],
+             [[[0],[2]],[[],[1]],[[1],[0]],[[2],[3]]],
+             [[[1],[2],[0,2]],[[0,1],[1],[0]]],
+             [[[0],[3],[2]],[[],[],[1]],[[2],[],[3]]],
+             [[[0],[2],[],[1]],[[2],[],[0],[3]]],
+             [[[0],[3],[]],[[1],[],[1]],[[2],[],[3]]],
+             [[[0],[3],[0]],[[],[],[1]],[[2],[],[3]]],
+			 [[[0],[3],[1]],[[],[],[4]],[[2],[0],[3]]],
+             [[[],[],[]],[[],[],[]],[[],[],[]]]]
+
+cellSizeA = [200,150,200,200,150,200,200,150,200,200,200,200]
+
+gameText = [[["New levels!",[150,220]]],
+            [],
+            [],
+            [],
+            [["Let's take a break, shall we?",[190,350]]],
+            [["There's only 11 levels",[400,400]]],
+            [],
+            [["This one is trippy",[200,250]]],
+            [],
+			[["Just to give you a hint",[400,250]],
+			 ["Of what's coming next",[400,450]]],
+            [["YAY! You beat the game!",[300,300]],
+             ["More levels coming soon",[400,400]]]]
+
+marginxA = []
+marginyA = []
+for(k=0; k<numLevels; k++){
+	marginxA.push(windx/2 - boardxA[k]*cellSizeA[k]/2)
+    marginyA.push(windy/2 - boardyA[k]*cellSizeA[k]/2)
+}
+
+
+wallsA = []
+
+for(k=0; k<numLevels; k++){
+	walls = new Array(2*boardxA[k]-1)
+    for(i=0; i<2*boardxA[k]-1; i++){
+    	walls[i] = new Array(2*boardyA[k]-1)
+        for(j=0; j<2*boardyA[k]-1; j++){
+        	walls[i][j] = -1
+        }
+    }
+    
+    for(i=0; i<boardyA[k]-1; i++){
+    	for(j=0; j<boardxA[k]; j++){
+        	walls[2*j][2*i+1] = hWallsA[k][i][j]
+        }
+    }
+    for(i=0; i<boardxA[k]-1; i++){
+    	for(j=0; j<boardyA[k]; j++){
+        	walls[2*i+1][2*j] = vWallsA[k][i][j]
+        }
+    }
+	wallsA[k] = walls
+}
+
+
+
+move = [[0,1],[0,-1],[1,0],[-1,0]]
+//keyMove = ["KeyS","KeyW","KeyD","KeyA"]
+keyMove = ["ArrowDown","ArrowUp","ArrowRight","ArrowLeft"]
+charKeys = ["Digit1","Digit2","Digit3","Digit4"]
+
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color
+	ctx.fillRect(sx,sy,l,w)
+}
+ 
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function fillText(text,color,size,x,y){
+	ctx.font = String(size)+"px Arial"
+	ctx.fillStyle = color
+	ctx.textAlign = "center"
+	ctx.fillText(text,x,y)
+}
+
+
+function drawBoard(){
+	fillRect(space,0,0,windx,windy)
+	fillRect(BG,marginx-border,marginy-border,cellSize*boardx+wallThick*(boardx-1)+border*2,cellSize*boardy+wallThick*(boardy-1)+border*2)
+	fillRect(space,marginx,marginy,cellSize*boardx+wallThick*(boardx-1),cellSize*boardy+wallThick*(boardy-1))
+	fillRect(cGoal,marginx+(cellSize+wallThick)*(boardx-1),marginy+(cellSize+wallThick)*(boardy-1),cellSize,cellSize)
+	for(i=0; i<boardy-1; i++){
+		for(j=0; j<boardx; j++){
+			if(switched[hWalls[i][j]]){
+				color = lit[hWalls[i][j]]
+			}
+			else{
+				color = colors[hWalls[i][j]]
+			}
+			fillRect(color,cellSize*j+wallThick*j+marginx,cellSize*(i+1)+wallThick*(i)+marginy,cellSize,wallThick)
+		}
+	}
+	for(i=0; i<boardx-1; i++){
+		for(j=0; j<boardy; j++){
+			if(switched[vWalls[i][j]]){
+				color = lit[vWalls[i][j]]
+			}
+			else{
+				color = colors[vWalls[i][j]]
+			}
+			fillRect(color,cellSize*(i+1)+wallThick*(i)+marginx,cellSize*j+wallThick*j+marginy,wallThick,cellSize)
+		}
+	}
+	for(i=0; i<boardx; i++){
+		for(j=0; j<boardy; j++){
+			for(k=0; k<switches[j][i].length; k++){
+				fillRect(colors[switches[j][i][k]],marginx+cellSize*i+cellSize/2+wallThick*i-switches[j][i].length*switchSize/2+k*switchSize,marginy+cellSize*j+cellSize/2+wallThick*j-switchSize/2,switchSize,switchSize)
+			}
+		}
+	}
+}
+
+
+function drawChars(){
+	for(i=0; i<chars; i++){
+		x = positions[i][0]
+		y = positions[i][1]
+		fillCirc(BG,x,y,charSize+1)
+    	fillCirc(cChars[i],x,y,charSize)
+		color = text
+		if(i == currChar){
+			color = space
+		}
+		fillText((i+1).toString(),color,charSize,x,y+7)
+    }
+}
+
+
+function drawNav(){
+	if(level>0){
+		fillText("Previous Level",text,navSize,100,windy-marginy/2)
+	}
+	if(level<maxLevel){
+		fillText("Next Level",text,navSize,windx/2,windy-marginy/2)
+	}
+	fillText("Restart Level",text,navSize,windy-100,windy-marginy/2)
+	fillText("Level "+(level+1).toString(),text,50,windx/2,marginy/2)
+}
+
+function drawWin(){
+	fillText("Yay!",text,50,windx/2,windy/2)
+}
+
+
+function drawText(){
+	for(i=0; i<gameText[level].length; i++){
+		fillText(gameText[level][i][0],text,textSize,gameText[level][i][1][0],gameText[level][i][1][1])
+	}
+}
+
+
+function free(){
+	px = positions[currChar][0]
+    py = positions[currChar][1]
+    cellx = parseInt((px-marginx)/(cellSize+wallThick))
+    celly = parseInt((py-marginy)/(cellSize+wallThick))
+    if (!( marginx+charSize < px && px <= cellSize*boardx+wallThick*(boardx-1)+marginx-charSize && marginy+charSize < py && py <= cellSize*boardy+wallThick*(boardy-1)+marginy-charSize)){
+    	return false
+    }
+    if (px < marginx+cellx*(cellSize+wallThick)+charSize && !switched[vWalls[cellx-1][celly]]){
+    	return false
+    }
+    if (px > marginx+(cellx+1)*(cellSize+wallThick)-wallThick-charSize && !switched[vWalls[cellx][celly]]){
+    	return false
+    }
+    if (py < marginy+celly*(cellSize+wallThick)+charSize && !switched[hWalls[celly-1][cellx]]){
+    	return false
+    }
+    if (py > marginy+(celly+1)*(cellSize+wallThick)-wallThick-charSize && !switched[hWalls[celly][cellx]]){
+    	return false
+    }
+    return true
+}
+
+
+
+var boardx,boardy,chars,hWalls,vWalls,walls,switches,marginx,marginy,cellSize,positions,currChar,won
+
+pressed = [false,false,false,false]
+switched = new Array(numColors)
+for(i=0; i<numColors; i++){
+	switched[i] = false
+}
+
+function setLevel(level){
+	boardx = boardxA[level]
+    boardy = boardyA[level]
+    chars = charsA[level]
+    hWalls = hWallsA[level]
+    vWalls = vWallsA[level]
+    walls = wallsA[level]
+    switches = switchesA[level]
+    marginx = marginxA[level]
+    marginy = marginyA[level]
+    cellSize = cellSizeA[level]
+    positions = new Array(chars)
+	for(i=0; i<chars; i++){
+    	positions[i] = new Array(2)
+    	positions[i][0] = marginx+charSize*(2*i+2)
+        positions[i][1] = marginy+charSize*2
+	}
+    currChar = 0
+	pLevel = level
+    won = false
+	wonUpdate = false
+}
+
+/*
+storeLevel = localStorage.getItem("thedukevindatastoreMoreDoorPuzzleLevel")
+if(storeLevel == null){
+	level = 0
+}
+else{
+	level = parseInt(storeLevel)
+}
+maxLevel = level
+setLevel(level)
+*/
+storeLevel = maxLevel = 0
+level = 0
+setLevel(0)
+
+
+document.addEventListener("keydown",keydownHandler);
+document.addEventListener("keyup",keyupHandler);
+document.addEventListener("click",clickHandler);
+
+
+function keydownHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	pressed[i] = true;
+		}
+	}
+    for(i=0; i<chars; i++){
+    	if(charKeys[i] == key){
+        	currChar = i
+        }
+    }
+}
+
+function keyupHandler(event){
+	key = event.code
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	pressed[i] = false;
+		}
+	}
+}
+
+function abs(x){
+	if(x<0){return -x}
+	return x
+}
+
+function clickHandler(event){
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+	if(mousey>windy-marginy){
+		if(level<maxLevel && abs(mousex-windx/2)<100){
+			level += 1
+			setLevel(level)
+		}
+		if(level>0 && mousex<200){
+			level -= 1
+			setLevel(level)
+		}
+		if(mousex>windy-200){
+			setLevel(level)
+		}
+	}
+}
+
+
+ 
+function update(){
+	for(i=0; i<4; i++){
+    	if(pressed[i]){
+        	positions[currChar][0] += move[i][0]
+            positions[currChar][1] += move[i][1]
+            if(!free()){
+            	positions[currChar][0] -= move[i][0]
+            	positions[currChar][1] -= move[i][1]
+            }
+        }
+    }
+	
+	for(i=0; i<numColors; i++){
+		switched[i] = false
+	}
+	switched[6] = true
+	for(i=0; i<chars; i++){
+		px = positions[i][0]
+		py = positions[i][1]
+		cellx = parseInt((px-marginx)/(cellSize+wallThick))
+        celly = parseInt((py-marginy)/(cellSize+wallThick))
+		if (marginx+cellx*(cellSize+wallThick)+cellSize/3 <= px && px <= marginx+(cellx+1)*(cellSize+wallThick)-cellSize/3 && marginy+celly*(cellSize+wallThick)+cellSize/3 <= py && py <= marginy+(celly+1)*(cellSize+wallThick)-cellSize/3){
+			for(j=0; j<switches[celly][cellx].length; j++){
+				switched[switches[celly][cellx][j]] = true
+			}
+		}
+	}
+	
+	won = true
+	for(i=0; i<chars; i++){
+		if(positions[i][0] < marginx + (cellSize+wallThick) * (boardx-1)){
+			won = false
+		}
+		if(positions[i][1] < marginy + (cellSize+wallThick) * (boardy-1)){
+			won = false
+		}
+	}
+	if(won && level == maxLevel && !wonUpdate){
+		maxLevel += 1
+		wonUpdate = true
+		localStorage.setItem("thedukevindatastoreMoreDoorPuzzleLevel", maxLevel)
+	}
+	
+	drawBoard()
+    drawText()
+	drawChars()
+	drawNav()
+	
+	if(won){
+		drawWin()
+	}
+}
+ 
+var ONE_FRAME_TIME = 1000 / 240 ;
+var mainloop = function() {
+	update()
+};
+setInterval( mainloop, ONE_FRAME_TIME );
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
