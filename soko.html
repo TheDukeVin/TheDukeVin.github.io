@@ -40,9 +40,7 @@ charSize = 20
 
 navSize = 20
 
-
 pi = Math.PI
-
 
 BG = "#000"
 text = "#000"
@@ -50,55 +48,72 @@ space = "#fff"
 
 nonColorBox = "#c60"
 nonColorX = "#000"
+colorBox = [,,"#f00","#0f0","#00f"]
 cChar = "#f33"
 cWin = "#00f"
 
-numLevels = 5
 
-boardxA = [7,7,8,8,8]
-boardyA = [7,7,8,9,8]
-cellSizeA = [50,50,50,50,50]
-coloredA = [false,false,false,false,false]
+numLevels = 7
+
+boardxA = [7,7,8,8,8,8,7]
+boardyA = [7,7,8,9,8,9,7]
+cellSizeA = [50,50,50,50,50,50,50]
+coloredA = [false,false,false,false,false,true,true]
 
 roomA = [[[1, 1, 1, 1, 1, 1, 1],
-          [1,10, 0, 0, 0, 0, 1],
-          [1, 0, 0,11, 0, 0, 1],
+          [1,20, 0, 0, 0, 0, 1],
+          [1, 0, 0, 2, 0, 0, 1],
           [1, 1, 0, 1, 1, 1, 1],
-          [1, 0, 0, 0,12, 0, 1],
-          [1, 0, 0, 0, 0,10, 1],
+          [1, 0, 0, 0, 3, 0, 1],
+          [1, 0, 0, 0, 0,30, 1],
           [1, 1, 1, 1, 1, 1, 1]],
 		 [[0, 1, 1, 1, 1, 1, 1],
 		  [1, 1, 0, 0, 0, 0, 1],
-		  [1, 0, 0, 1, 1,10, 1],
-		  [1, 0,11,10, 0, 0, 1],
-		  [1, 1, 0,12, 0, 0, 1],
+		  [1, 0, 0, 1, 1,20, 1],
+		  [1, 0, 2,30, 0, 0, 1],
+		  [1, 1, 0, 3, 0, 0, 1],
 		  [0, 1, 1, 0, 0, 1, 1],
 		  [0, 0, 1, 1, 1, 1, 0]],
 		 [[1, 1, 1, 1, 0, 0, 0, 0],
 		  [1, 0, 0, 1, 1, 1, 1, 0],
 		  [1, 0, 0, 1, 0, 0, 1, 1],
-		  [1, 0, 0, 1, 0,11, 0, 1],
-		  [1, 0, 0, 1, 0,12, 0, 1],
-		  [1, 0, 0,10, 0,10, 1, 1],
+		  [1, 0, 0, 1, 0, 2, 0, 1],
+		  [1, 0, 0, 1, 0, 3, 0, 1],
+		  [1, 0, 0,20, 0,30, 1, 1],
 		  [1, 1, 0, 0, 1, 1, 1, 0],
 		  [0, 1, 1, 1, 1, 0, 0, 0]],
 		 [[1, 1, 1, 1, 1, 1, 1, 1, 1],
-		  [1, 0, 0,10, 1, 0, 0, 0, 1],
+		  [1, 0, 0,20, 1, 0, 0, 0, 1],
 		  [1, 0, 0, 0, 0, 0, 0, 0, 1],
-		  [1, 1, 1,10, 1, 1, 0, 1, 1],
-		  [0, 1, 0, 0, 1, 0,11, 1, 0],
-		  [0, 1, 0, 0,12, 0, 0, 1, 0],
+		  [1, 1, 1,30, 1, 1, 0, 1, 1],
+		  [0, 1, 0, 0, 1, 0, 2, 1, 0],
+		  [0, 1, 0, 0, 3, 0, 0, 1, 0],
 		  [0, 1, 0, 0, 1, 0, 0, 1, 0],
 		  [0, 1, 1, 1, 1, 1, 1, 1, 0]],
 		 [[0, 0, 0, 0, 1, 1, 1, 1],
 		  [0, 0, 1, 1, 1, 0, 0, 1],
 		  [1, 1, 1, 0, 0, 0, 0, 1],
-		  [1, 0,11, 0, 1, 0, 0, 1],
-		  [1, 0,12, 0, 1,10, 1, 1],
+		  [1, 0, 2, 0, 1, 0, 0, 1],
+		  [1, 0, 3, 0, 1,20, 1, 1],
 		  [1, 1, 0, 0, 0, 0, 0, 1],
-		  [0, 1, 1, 0,10, 0, 0, 1],
-		  [0, 0, 1, 1, 1, 1, 1, 1]]]
-startA = [[4,5],[4,2],[4,6],[2,7],[3,1]]
+		  [0, 1, 1, 0,30, 0, 0, 1],
+		  [0, 0, 1, 1, 1, 1, 1, 1]],
+		 [[1, 1, 1, 1, 1, 1, 1, 1, 1],
+		  [1, 0, 0,20, 1, 0, 0, 0, 1],
+		  [1, 0, 0, 0, 0, 0, 0, 0, 1],
+		  [1, 1,30, 1, 1, 1, 0, 1, 1],
+		  [0, 1, 0, 0, 0, 0, 0, 1, 0],
+		  [0, 1, 3, 2, 1, 0, 0, 1, 0],
+		  [0, 1, 0, 0, 1, 0, 0, 1, 0],
+		  [0, 1, 1, 1, 1, 1, 1, 1, 0]],
+		 [[1, 1, 1, 1, 1, 1, 1],
+		  [1, 0,22, 0, 0, 0, 1],
+		  [1, 0, 0, 0, 0, 0, 1],
+		  [1, 1,30, 1, 0, 1, 1],
+		  [1, 0, 3, 0, 4, 1, 0],
+		  [1, 0, 0,40, 0, 1, 0],
+		  [1, 1, 1, 1, 1, 1, 0]]]
+startA = [[4,5],[4,2],[4,6],[2,7],[3,1],[6,2],[5,4]]
 
 move = [[0,1],[0,-1],[1,0],[-1,0]]
 //keyMove = ["KeyS","KeyW","KeyD","KeyA"]
@@ -134,9 +149,13 @@ function fillLine(color,width,sx,sy,ex,ey){
 	ctx.stroke()
 }
 
-function fillX(width,x,y){
-	fillLine(nonColorX, width, marginx+x*cellSize, marginy+y*cellSize, marginx+(x+1)*cellSize, marginy+(y+1)*cellSize)
-	fillLine(nonColorX, width, marginx+(x+1)*cellSize, marginy+y*cellSize, marginx+x*cellSize, marginy+(y+1)*cellSize)
+function fillX(color,width,x,y){
+	fillLine(color, width, marginx+x*cellSize, marginy+y*cellSize, marginx+(x+1)*cellSize, marginy+(y+1)*cellSize)
+	fillLine(color, width, marginx+(x+1)*cellSize, marginy+y*cellSize, marginx+x*cellSize, marginy+(y+1)*cellSize)
+}
+
+function Int(x){
+	return Math.floor(x)
 }
 
 function drawBoard(){
@@ -146,16 +165,29 @@ function drawBoard(){
 			cell = room[i][j]
 			if(cell == 1){
 				fillRect(BG,marginx+i*cellSize,marginy+j*cellSize,cellSize,cellSize)
+				continue
 			}
-			if(!colored){
-				if(10<cell){
+			if(cell == 0) continue
+			if(colored){
+				if(cell%10 != 0){
+					fillRect(colorBox[cell%10], marginx+i*cellSize+cellSize/4, marginy+j*cellSize+cellSize/4, cellSize/2, cellSize/2)
+				}
+				if(cell%11 == 0){
+					fillX(colorBox[Int(cell/10)],2,i,j)
+				}
+				else if(cell>10){
+					fillX(colorBox[Int(cell/10)],4,i,j)
+				}
+			}
+			else{
+				if(cell%10 == 0){
+					fillX(nonColorX,4,i,j)
+				}
+				else{
 					fillRect(nonColorBox, marginx+i*cellSize+cellSize/4, marginy+j*cellSize+cellSize/4, cellSize/2, cellSize/2)
-				}
-				if(cell == 10){
-					fillX(4,i,j)
-				}
-				if(cell > 20){
-					fillX(2,i,j)
+					if(cell>10){
+						fillX(nonColorX,2,i,j)
+					}
 				}
 			}
 		}
@@ -203,19 +235,21 @@ function setLevel(level){
 }
 
 function won(){
-	if(!colored){
-		for(i=0; i<boardx; i++){
-			for(j=0; j<boardy; j++){
-				if(10<room[i][j] && room[i][j] < 20){
-					return false
-				}
+	for(i=0; i<boardx; i++){
+		for(j=0; j<boardy; j++){
+			cell = room[i][j]
+			if(colored && (cell>1 && cell%11 != 0)){
+				return false
+			}
+			if(!colored && (1<cell && cell<10)){
+				return false
 			}
 		}
 	}
 	return true
 }
 
-
+/*
 storeLevel = localStorage.getItem("thedukevindatastoreBoxPuzzleLevel")
 if(storeLevel == null){
 	level = 0
@@ -228,11 +262,12 @@ if(level >= numLevels){
 }
 maxLevel = level
 setLevel(level)
-/*
-storeLevel = maxLevel = 4
+*/
+
+storeLevel = maxLevel = 6
 level = 0
 setLevel(0)
-*/
+
 
 document.addEventListener("keydown",keydownHandler);
 document.addEventListener("keyup",keyupHandler);
@@ -248,21 +283,20 @@ function keydownHandler(event){
 			dy = move[i][1]
 			valid = true
 			upblock = room[pos[0]+dx][pos[1]+dy]
-			if(upblock == 1){
-				valid = false
-			}
-			if(upblock>10){
+			if(upblock == 1) valid = false
+			else if(upblock == 0 || upblock%10 == 0) valid = true
+			else{
 				up2block = room[pos[0]+2*dx][pos[1]+2*dy] 
-				if(up2block == 1 || (up2block>10)){
+				if(up2block%10 != 0){
 					valid = false
 				}
 			}
 			if(valid){
 				pos[0] += dx
 				pos[1] += dy
-				if(10<upblock){
-					room[pos[0]][pos[1]] -= 10+upblock%10
-					room[pos[0]+dx][pos[1]+dy] += 10+upblock%10
+				if(1<upblock && upblock%10 != 0){
+					room[pos[0]][pos[1]] -= upblock%10
+					room[pos[0]+dx][pos[1]+dy] += upblock%10
 				}
 			}
 		}
