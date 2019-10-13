@@ -212,8 +212,11 @@ function drawNav(){
 	if(level<maxLevel){
 		fillText("Next Level",text,navSize,windx/2,windy-marginy/2)
 	}
-	fillText("Restart Level",text,navSize,windy-100,windy-marginy/2)
+	fillText("Restart Level",text,navSize,windx-100,windy-marginy/2)
 	fillText("Level "+(level+1).toString(),text,50,windx/2,marginy/2)
+	if(moves>0){
+		fillText("Undo",text,navSize,windx/2,windy-marginy/4)
+	}
 }
 
 function drawWin(){
@@ -239,6 +242,9 @@ function setLevel(level){
 	}
 	pos = [startA[level][0], startA[level][1]]
 	colored = coloredA[level]
+	history = []
+	charHistory = []
+	moves = 0
 }
 
 function won(){
@@ -299,6 +305,15 @@ function keydownHandler(event){
 				}
 			}
 			if(valid){
+				history[moves] = []
+				charHistory[moves] = [pos[0],pos[1]]
+				for(a=0; a<boardx; a++){
+					history[moves][a] = []
+					for(b=0; b<boardy; b++){
+						history[moves][a][b] = room[a][b]
+					}
+				}
+				moves += 1
 				pos[0] += dx
 				pos[1] += dy
 				if(1<upblock && upblock%10 != 0){
@@ -323,7 +338,7 @@ function clickHandler(event){
 	rect = canvas.getBoundingClientRect();
     mousex = event.clientX - rect.left;
     mousey = event.clientY - rect.top;
-	if(mousey>windy-marginy){
+	if(mousey>windy-marginy && mousey < windy-marginy*3/8){
 		if(level<maxLevel && abs(mousex-windx/2)<100){
 			level += 1
 			setLevel(level)
@@ -334,6 +349,18 @@ function clickHandler(event){
 		}
 		if(mousex>windy-200){
 			setLevel(level)
+		}
+	}
+	if(mousey > windy-marginy*3/8){
+		if(moves>0){
+			moves -= 1
+			for(i=0; i<boardx; i++){
+				for(j=0; j<boardy; j++){
+					room[i][j] = history[moves][i][j]
+				}
+			}
+			pos[0] = charHistory[moves][0]
+			pos[1] = charHistory[moves][1]
 		}
 	}
 }
