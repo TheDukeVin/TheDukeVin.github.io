@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gpu.js/1.10.4/gpu.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+<title> The Duke Vin </title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<div id="nav-placeholder"></div>
+
+<h1> Mandelbrot Zoom </h1>
+
+<canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
+
+<h2> How to zoom </h2>
+
+<p>
+Press the <b>arrow keys</b> to scroll. Press <b>q and w keys</b> to zoom in. Press <b>a and s keys</b> to increase and decrease iterations (default 500).
+</p>
+
+<script>
+
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
+windx = 700
+windy = 600
+centerx = 0
+centery = 0
+zoom = 0.005
+iteration = 500
+
+zoomRate = 0.99
+scrollRate = 3
+
+//colorCycle = 30
+
+const canvas = document.getElementById('canvas');
+
+const gpu = new GPU({
+  canvas: canvas,
+  mode: 'gpu'
+})
+
+
+const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iteration) {
+	let colorCycle = 10
+
+	let x = this.thread.x
+	let y = this.thread.y
+	let ca = centerx+(x-windx/2)*zoom
+	let cb = centery-(y-windy/2)*zoom
+	//Calculate iterations
+	let xa = 0
+	let xb = 0
+	let nxa = 0
+	let nxb = 0
+	let result = -1
+	for(let i=0; i<iteration; i++){
+		nxa = xa*xa-xb*xb+ca
+		nxb = 2*xa*xb+cb
+		xa = nxa
+		xb = nxb
+		if(xa*xa+xb*xb > 4){
+			result = i
+			break
+		}
+	}
+	if(result == -1){
+		this.color(0,0,0)
+	}
+	else{
+		let k = result % (3*colorCycle)
+		let g = k/colorCycle
+		if(k<colorCycle){
+			this.color(1-g,g,0)
+		}
+		else if(k<2*colorCycle){
+			this.color(0,2-g,g-1)
+		}
+		else{
+			this.color(g-2,0,3-g)
+		}
+	}
+}, {loopMaxIterations: 10000})
+  .setOutput([windx, windy])
+  .setGraphical(true)
+
+document.addEventListener("keydown",keydownHandler);
+document.addEventListener("keyup",keyupHandler);
+
+zoomPressed = [false,false]
+zoomKeys = ["KeyQ","KeyW"]
+
+move = [[0,1],[0,-1],[1,0],[-1,0]]
+movePressed = [false,false,false,false]
+keyMove = ["ArrowDown","ArrowUp","ArrowRight","ArrowLeft"]
+
+iterPressed = [false,false]
+iterKeys = ["KeyA","KeyS"]
+
+function keydownHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<2; i++){
+		if(zoomKeys[i] == key){
+			zoomPressed[i] = true
+		}
+		if(iterKeys[i] == key){
+			iterPressed[i] = true
+		}
+	}
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	movePressed[i] = true;
+		}
+	}
+}
+
+function keyupHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<2; i++){
+		if(zoomKeys[i] == key){
+			zoomPressed[i] = false
+		}
+		if(iterKeys[i] == key){
+			iterPressed[i] = false
+		}
+	}
+	
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	movePressed[i] = false;
+		}
+	}
+}
+
+function update(){
+	if(zoomPressed[0]){
+		zoom *= zoomRate
+	}
+	if(zoomPressed[1]){
+		zoom /= zoomRate
+	}
+	if(iterPressed[0]){
+		iteration += 1
+	}
+	if(iterPressed[1]){
+		iteration -= 1
+	}
+	for(i=0; i<4; i++){
+		if(movePressed[i]){
+			centerx += scrollRate*zoom*move[i][0]
+			centery += scrollRate*zoom*move[i][1]
+		}
+	}
+}
+
+var ONE_FRAME_TIME = 1000 / 40 ;
+var mainloop = function() {
+	update()
+	render(windx,windy,centerx,centery,zoom,iteration)
+}
+setInterval( mainloop, ONE_FRAME_TIME );
+
+
+</script>
+</html>
