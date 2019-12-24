@@ -14,11 +14,7 @@
 <body>
 <div id="nav-placeholder"></div>
 
-<h1> Mandelbrot Zoom </h1>
-
-<p>
-Also check out Mandelbrot Zoom 2
-</p>
+<h1> Mandelbrot Zoom 2 </h1>
 
 <canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
 
@@ -34,23 +30,29 @@ Press the <b>arrow keys</b> to scroll. Press <b>q and w keys</b> to zoom. Press 
 My friend Justin introduced me to the idea of a GPU, which can generate graphics much faster than traditional methods. This serves as a proof of concept that GPUs can give rise to beautiful graphics.
 </p>
 
-<script>
 
-$(function(){
-  $("#nav-placeholder").load("nav.html");
-});
+<script>
 
 windx = 700
 windy = 600
 centerx = 0
 centery = 0
 zoom = 0.005
-iteration = 100
+iteration = 500
+
+mode = 0 //0=mandel, 1=julia
+ja = 0
+jb = 0
 
 zoomRate = 0.99
 scrollRate = 3
 
 //colorCycle = 30
+
+function time(){
+	d = new Date()
+	return d.getTime()
+}
 
 const canvas = document.getElementById('canvas');
 
@@ -58,18 +60,30 @@ const gpu = new GPU({
   canvas: canvas,
   mode: 'gpu'
 })
-
-
-const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iteration) {
+const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iteration,mode,ja,jb) {
 	let colorCycle = 10
 
 	let x = this.thread.x
 	let y = this.thread.y
-	let ca = centerx+(x-windx/2)*zoom
-	let cb = centery-(y-windy/2)*zoom
-	//Calculate iterations
+	let ca = 0
+	let cb = 0
 	let xa = 0
 	let xb = 0
+	
+	if(mode == 0){
+		ca = centerx+(x-windx/2)*zoom
+		cb = centery-(y-windy/2)*zoom
+		xa = 0
+		xb = 0
+	}
+	else{
+		ca = ja
+		cb = jb
+		xa = centerx+(x-windx/2)*zoom
+		xb = centery-(y-windy/2)*zoom
+	}
+	
+	//Calculate iterations
 	let nxa = 0
 	let nxb = 0
 	let result = -1
@@ -87,6 +101,9 @@ const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iterat
 		this.color(0,0,0)
 	}
 	else{
+		//let k = (result % 50)/50
+		//this.color(k,k,k)
+		
 		let k = result % (3*colorCycle)
 		let g = k/colorCycle
 		if(k<colorCycle){
@@ -98,13 +115,16 @@ const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iterat
 		else{
 			this.color(g-2,0,3-g)
 		}
+		
 	}
-}, {loopMaxIterations: 10000})
+})
   .setOutput([windx, windy])
   .setGraphical(true)
 
+
 document.addEventListener("keydown",keydownHandler);
 document.addEventListener("keyup",keyupHandler);
+document.addEventListener("click",clickHandler);
 
 zoomPressed = [false,false]
 zoomKeys = ["KeyQ","KeyW"]
@@ -153,6 +173,21 @@ function keyupHandler(event){
 	}
 }
 
+
+lastClicked = time()
+function clickHandler(event){
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+	clickTime = time()
+	if(clickTime - lastClicked < 500){
+		mode = 1-mode
+		ja = centerx+(mousex-windx/2)*zoom
+		jb = centery+(mousey-windy/2)*zoom
+	}
+	lastClicked = time()
+}
+
 function update(){
 	if(zoomPressed[0]){
 		zoom *= zoomRate
@@ -177,7 +212,7 @@ function update(){
 var ONE_FRAME_TIME = 1000 / 40 ;
 var mainloop = function() {
 	update()
-	render(windx,windy,centerx,centery,zoom,iteration)
+	render(windx,windy,centerx,centery,zoom,iteration,mode,ja,jb)
 }
 setInterval( mainloop, ONE_FRAME_TIME );
 
