@@ -21,7 +21,7 @@
 <h2> How to zoom </h2>
 
 <p>
-Press the <b>arrow keys</b> to scroll. Press <b>q and w keys</b> to zoom. Press <b>a and s keys</b> to increase and decrease iterations (default 100).
+Press the <b>arrow keys</b> to scroll. Press <b>q and w keys</b> to zoom. Press <b>a and s keys</b> to increase and decrease iterations (default 100). <b>Double click</b> at some point to switch to Julia set at that point. Press <b>c</b> to change color.
 </p>
 
 <h2> How I made this Program </h2>
@@ -33,6 +33,10 @@ My friend Justin introduced me to the idea of a GPU, which can generate graphics
 
 <script>
 
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
 windx = 700
 windy = 600
 centerx = 0
@@ -43,6 +47,7 @@ iteration = 500
 mode = 0 //0=mandel, 1=julia
 ja = 0
 jb = 0
+colorMode = 0
 
 zoomRate = 0.99
 scrollRate = 3
@@ -60,7 +65,7 @@ const gpu = new GPU({
   canvas: canvas,
   mode: 'gpu'
 })
-const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iteration,mode,ja,jb) {
+const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iteration,mode,ja,jb,colorMode) {
 	let colorCycle = 10
 
 	let x = this.thread.x
@@ -101,21 +106,24 @@ const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iterat
 		this.color(0,0,0)
 	}
 	else{
-		//let k = (result % 50)/50
-		//this.color(k,k,k)
-		
-		let k = result % (3*colorCycle)
-		let g = k/colorCycle
-		if(k<colorCycle){
-			this.color(1-g,g,0)
-		}
-		else if(k<2*colorCycle){
-			this.color(0,2-g,g-1)
+		let k = 0
+		if(colorMode == 1){
+			k = (result % 50)/50
+			this.color(k,k,k)
 		}
 		else{
-			this.color(g-2,0,3-g)
+			k = result % (3*colorCycle)
+			let g = k/colorCycle
+			if(k<colorCycle){
+				this.color(1-g,g,0)
+			}
+			else if(k<2*colorCycle){
+				this.color(0,2-g,g-1)
+			}
+			else{
+				this.color(g-2,0,3-g)
+			}
 		}
-		
 	}
 })
   .setOutput([windx, windy])
@@ -151,6 +159,9 @@ function keydownHandler(event){
 		if(keyMove[i] == key){
         	movePressed[i] = true;
 		}
+	}
+	if("KeyC" == key){
+		colorMode = 1-colorMode
 	}
 }
 
@@ -212,7 +223,7 @@ function update(){
 var ONE_FRAME_TIME = 1000 / 40 ;
 var mainloop = function() {
 	update()
-	render(windx,windy,centerx,centery,zoom,iteration,mode,ja,jb)
+	render(windx,windy,centerx,centery,zoom,iteration,mode,ja,jb,colorMode)
 }
 setInterval( mainloop, ONE_FRAME_TIME );
 
