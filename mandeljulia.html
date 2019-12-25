@@ -107,11 +107,7 @@ const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iterat
 	}
 	else{
 		let k = 0
-		if(colorMode == 1){
-			k = (result % 50)/50
-			this.color(k,k,k)
-		}
-		else{
+		if(colorMode == 0){
 			k = result % (3*colorCycle)
 			let g = k/colorCycle
 			if(k<colorCycle){
@@ -123,6 +119,19 @@ const render = gpu.createKernel(function(windx,windy,centerx,centery,zoom,iterat
 			else{
 				this.color(g-2,0,3-g)
 			}
+		}
+		if(colorMode == 1){
+			k = (result % 50)/50
+			this.color(k,k,k)
+		}
+		if(colorMode == 2){
+			let cy1 = 26.59
+			let cy2 = 13.97
+			let cy3 = 48.45
+			let k1 = (Math.min(result % (2*cy1),(2*cy1-result) % (2*cy1)))/cy1
+			let k2 = (Math.min(result % (2*cy2),(2*cy2-result) % (2*cy2)))/cy2
+			let k3 = (Math.min(result % (2*cy3),(2*cy3-result) % (2*cy3)))/cy3
+			this.color(k1,k2,k3)
 		}
 	}
 })
@@ -161,7 +170,7 @@ function keydownHandler(event){
 		}
 	}
 	if("KeyC" == key){
-		colorMode = 1-colorMode
+		colorMode = (colorMode+1) % 3
 	}
 }
 
