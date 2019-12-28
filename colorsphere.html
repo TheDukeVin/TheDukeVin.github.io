@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gpu.js/1.10.4/gpu.min.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<div id="nav-placeholder"></div>
+
+<canvas id="canvas" width="700" height="600"> Your Browser does not support canvases :( </canvas>
+
+<script>
+
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
+windx = 700
+windy = 600
+
+px = 0 // Player position
+py = 0
+pz = 0
+ah = 0 // Player view angle
+av = 0
+
+speed = 0.1
+
+const canvas = document.getElementById('canvas');
+
+const gpu = new GPU({
+  canvas: canvas,
+  mode: 'gpu'
+})
+const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av) {
+	let maxIt = 50
+	let minDist = 0.001
+	let maxDist = 10000
+	let hRange = 0.6
+	let vRange = 0.4
+	//this.color(0.5,0.5,1)
+	
+	let x = this.thread.x
+	let y = this.thread.y
+	let hRot = x/windx*2*hRange-hRange
+	let vRot = vRange-y/windy*2*vRange
+	let rx = Math.cos(hRot) // Initialize ray vector
+	let ry = Math.sin(hRot)
+	let rz = 0
+	let holdx = rx * Math.cos(vRot+av)
+	let holdy = ry
+	let holdz = rx * Math.sin(vRot+av)
+	rx = holdx
+	ry = holdy
+	rz = holdz
+	holdx = rx * Math.cos(ah) - ry * Math.sin(ah)
+	holdy = ry * Math.cos(ah) + rx * Math.sin(ah)
+	holdz = rz
+	rx = holdx
+	ry = holdy
+	rz = holdz
+	
+	/*
+	let rx = Math.cos(hRot)*Math.cos(vRot) // Ray vector
+	let ry = Math.sin(hRot)*Math.cos(vRot)
+	let rz = Math.sin(vRot)
+	*/
+	let mx = px //Marched position
+	let my = py
+	let mz = pz
+	
+	let dx = 0 //Initialize a bunch of variables. Will be changed later
+	let dy = 0
+	let dz = 0
+	let dist = 0
+	for(let i=0; i<maxIt; i++){
+		dx = mx % 2-1
+		dy = my % 2-1
+		dz = mz % 4-2
+		dist = Math.sqrt(dx*dx+dy*dy+dz*dz) - 0.4
+		if(dist < minDist){
+			break
+		}
+		mx += dist * rx
+		my += dist * ry
+		mz += dist * rz
+	}
+	if(dist < minDist){
+		let cy1 = 5.8
+		let cy2 = 30
+		let cy3 = 1.1
+		//let k1 = (Math.min(mx % (2*cy1),(2*cy1-mx) % (2*cy1)))/cy1
+		//let k2 = (Math.min(my % (2*cy2),(2*cy2-my) % (2*cy2)))/cy2
+		//let k3 = (Math.min(mz % (2*cy3),(2*cy3-mz) % (2*cy3)))/cy3
+		let k1 = mx%cy1 / cy1
+		let k2 = my%cy2 / cy2
+		let k3 = mz%cy3 / cy3
+		this.color(k1,k2,k3)
+		//this.color(0.5*(mx%2),0.5*(mx%2),(mx)%10 / 10)
+	}
+	else{
+		this.color(1,1,1)
+	}
+	
+})
+  .setOutput([windx, windy])
+  .setGraphical(true)
+
+document.addEventListener("mousemove",moveHandler)
+document.addEventListener("keydown",keydownHandler);
+document.addEventListener("keyup",keyupHandler);
+canvas.onclick = function () { canvas.requestPointerLock() }
+
+
+movePressed = [false,false,false,false]
+keyMove = ["KeyS","KeyW","KeyD","KeyA"]
+move = [[0,-1],[0,1],[1,0],[-1,0]]
+
+
+function keydownHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	movePressed[i] = true;
+		}
+	}
+}
+
+function keyupHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	movePressed[i] = false;
+		}
+	}
+}
+
+function moveHandler(event){
+/*
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+	ah = (mousex-windx/2)*0.01
+	av = (mousey-windy/2)*0.005
+	*/
+	ah += event.movementX*0.01
+	av += event.movementY*0.005
+}
+
+
+function update(){
+	render(windx,windy,px,py,pz,ah,av)
+	for(i=0; i<4; i++){
+    	if(movePressed[i]){
+			px += (move[i][1]*Math.cos(ah)-move[i][0]*Math.sin(ah))*speed * Math.cos(av)
+			py += (move[i][1]*Math.sin(ah)+move[i][0]*Math.cos(ah))*speed * Math.cos(av)
+        }
+    }
+	if(movePressed[1]){
+		pz += Math.sin(av) * speed
+	}
+	if(movePressed[0]){
+		pz -= Math.sin(av) * speed
+	}
+}
+
+var ONE_FRAME_TIME = 1000 / 40 ;
+var mainloop = function() {
+	update()
+}
+setInterval( mainloop, ONE_FRAME_TIME );
+  
+</script>
+</html>
