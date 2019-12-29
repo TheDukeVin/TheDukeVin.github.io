@@ -13,7 +13,7 @@
 <body>
 <div id="nav-placeholder"></div>
 
-<h1> 3D Sphere </h1>
+<h1> 3D Building </h1>
 
 <canvas id="canvas" width="700" height="600"> Your Browser does not support canvases :( </canvas>
 
@@ -22,7 +22,6 @@
 <p>
 Click on the screen to lock the mouse. Then, simply move the mouse to rotate. Press <b>a,s,d,f</b> to move around.
 </p>
-
 <script>
 
 $(function(){
@@ -40,8 +39,6 @@ av = 0
 
 speed = 0.1
 
-pi = Math.PI
-
 const canvas = document.getElementById('canvas');
 
 const gpu = new GPU({
@@ -49,12 +46,11 @@ const gpu = new GPU({
   mode: 'gpu'
 })
 const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av) {
-	let maxIt = 50
-	let minDist = 0.001
+	let maxIt = 150
+	let minDist = 0.01
 	let maxDist = 10000
 	let hRange = 0.6
 	let vRange = 0.4
-	//this.color(0.5,0.5,1)
 	
 	let x = this.thread.x
 	let y = this.thread.y
@@ -76,11 +72,6 @@ const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av) {
 	ry = holdy
 	rz = holdz
 	
-	/*
-	let rx = Math.cos(hRot)*Math.cos(vRot) // Ray vector
-	let ry = Math.sin(hRot)*Math.cos(vRot)
-	let rz = Math.sin(vRot)
-	*/
 	let mx = px //Marched position
 	let my = py
 	let mz = pz
@@ -90,11 +81,10 @@ const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av) {
 	let dz = 0
 	let dist = 0
 	for(let i=0; i<maxIt; i++){
-		dx = mx % 2-1
-		dy = my % 2-1
-		dz = mz % 4-2
-		
-		dist = Math.sqrt(dx*dx+dy*dy+dz*dz) - 0.4
+		dx = Math.abs(mx % 2-1)
+		dy = Math.abs(my % 10-5)
+		dz = Math.abs(mz % 2-1)
+		dist = Math.max(dz,Math.min(dx,dy)) - 0.2
 		if(dist < minDist){
 			break
 		}
@@ -103,17 +93,13 @@ const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av) {
 		mz += dist * rz
 	}
 	if(dist < minDist){
-		let cy1 = 5.8
+		let cy1 = 1.5
 		let cy2 = 30
 		let cy3 = 1.1
-		//let k1 = (Math.min(mx % (2*cy1),(2*cy1-mx) % (2*cy1)))/cy1
-		//let k2 = (Math.min(my % (2*cy2),(2*cy2-my) % (2*cy2)))/cy2
-		//let k3 = (Math.min(mz % (2*cy3),(2*cy3-mz) % (2*cy3)))/cy3
 		let k1 = mx%cy1 / cy1
 		let k2 = my%cy2 / cy2
 		let k3 = mz%cy3 / cy3
 		this.color(k1,k2,k3)
-		//this.color(0.5*(mx%2),0.5*(mx%2),(mx)%10 / 10)
 	}
 	else{
 		this.color(1,1,1)
@@ -155,13 +141,6 @@ function keyupHandler(event){
 }
 
 function moveHandler(event){
-/*
-	rect = canvas.getBoundingClientRect();
-    mousex = event.clientX - rect.left;
-    mousey = event.clientY - rect.top;
-	ah = (mousex-windx/2)*0.01
-	av = (mousey-windy/2)*0.005
-	*/
 	ah += event.movementX*0.01
 	av += event.movementY*0.005
 	if(av > pi/2){
@@ -189,7 +168,7 @@ function update(){
 	}
 }
 
-var ONE_FRAME_TIME = 1000 / 40 ;
+var ONE_FRAME_TIME = 1000 / 60 ;
 var mainloop = function() {
 	update()
 }
