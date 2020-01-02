@@ -13,14 +13,14 @@
 <body>
 <div id="nav-placeholder"></div>
 
-<h1> 3D Building </h1>
+<h1> Mandelbulb </h1>
 
 <canvas id="canvas" width="700" height="600"> Your Browser does not support canvases :( </canvas>
 
 <h2> How to move </h2>
 
 <p>
-Click on the screen to lock the mouse. Then, simply move the mouse to rotate. Press <b>a,s,d,f</b> to move around.
+Click on the screen to lock the mouse. Then, simply move the mouse to rotate. Press <b>a,s,d,f</b> to move around. Press <b>z and x</b> to increase and decrease iteration.
 </p>
 <script>
 
@@ -31,13 +31,14 @@ $(function(){
 windx = 700
 windy = 600
 
-px = 0 // Player position
+px = -5 // Player position
 py = 0
 pz = 0
-ah = 0.5 // Player view angle
+ah = 0 // Player view angle
 av = 0
+iteration = 5
 
-speed = 0.1
+speedFactor = 0.05
 
 pi = Math.PI
 
@@ -47,10 +48,45 @@ const gpu = new GPU({
   canvas: canvas,
   mode: 'gpu'
 })
-const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av) {
-	let maxIt = 150
-	let minDist = 0.01
-	let maxDist = 10000
+
+function DE(x,y,z){
+	let r = 0
+	let dr = 1
+	let ax = x
+	let ay = y
+	let az = z
+	
+	let theta = 0
+	let phi = 0
+	let Power = 8
+	let zr = 0
+	
+	for(let j=0; j<iteration; j++){
+		r = Math.sqrt(ax*ax+ay*ay+az*az)
+		if(r > 40){
+			break
+		}
+		theta = Math.acos(az/r)
+		phi = Math.atan2(ay,ax)
+		dr = Math.pow(r,Power-1)*Power*dr + 1
+		
+		zr = Math.pow(r,Power)
+		theta = theta*Power
+		phi = phi*Power
+		
+		ax = zr*Math.sin(theta)*Math.cos(phi)+x
+		ay = zr*Math.sin(theta)*Math.sin(phi)+y
+		az = zr*Math.cos(theta)+z
+	}
+	return 0.5*Math.log(r)*r/dr
+}
+
+gpu.addFunction(DE)
+
+const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av,iteration) {
+	let maxStep = 200
+	let minDistProp = 0.0001
+	let maxDist = 100
 	let hRange = 0.6
 	let vRange = 0.4
 	
@@ -61,7 +97,7 @@ const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av) {
 	let rx = Math.cos(hRot) // Initialize ray vector
 	let ry = Math.sin(hRot)
 	let rz = 0
-	let holdx = rx * Math.cos(vRot+av)
+	let holdx = rx * Math.cos(vRot+av) //Orient ray vector
 	let holdy = ry
 	let holdz = rx * Math.sin(vRot+av)
 	rx = holdx
@@ -82,26 +118,27 @@ const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av) {
 	let dy = 0
 	let dz = 0
 	let dist = 0
-	for(let i=0; i<maxIt; i++){
-		dx = Math.abs(mx % 2-1)
-		dy = Math.abs(my % 10-5)
-		dz = Math.abs(mz % 2-1)
-		dist = Math.max(dz,Math.min(dx,dy)) - 0.2
-		if(dist < minDist){
-			break
-		}
+	let steps = maxStep
+	
+	for(let i=0; i<maxStep; i++){
+		dist = DE(mx,my,mz)
 		mx += dist * rx
 		my += dist * ry
 		mz += dist * rz
+		dx = mx-px
+		dy = my-py
+		dz = mz-pz
+		if(dist < minDistProp*Math.sqrt(dx*dx+dy*dy+dz*dz)){
+			steps = i
+			break
+		}
+		if(dist > maxDist){
+			break
+		}
 	}
-	if(dist < minDist){
-		let cy1 = 1.5
-		let cy2 = 30
-		let cy3 = 1.1
-		let k1 = mx%cy1 / cy1
-		let k2 = my%cy2 / cy2
-		let k3 = mz%cy3 / cy3
-		this.color(k1,k2,k3)
+	if(steps != maxStep){
+		let k = 1-steps / maxStep
+		this.color(k,k,k)
 	}
 	else{
 		this.color(1,1,1)
@@ -130,6 +167,12 @@ function keydownHandler(event){
         	movePressed[i] = true;
 		}
 	}
+	if(key == "KeyZ"){
+		iteration += 1
+	}
+	if(key == "KeyX"){
+		iteration -= 1
+	}
 }
 
 function keyupHandler(event){
@@ -143,8 +186,8 @@ function keyupHandler(event){
 }
 
 function moveHandler(event){
-	ah += event.movementX*0.01
-	av += event.movementY*0.005
+	ah += event.movementX*0.005
+	av += event.movementY*0.0025
 	if(av > pi/2){
 		av = pi/2
 	}
@@ -155,7 +198,8 @@ function moveHandler(event){
 
 
 function update(){
-	render(windx,windy,px,py,pz,ah,av)
+	render(windx,windy,px,py,pz,ah,av,iteration)
+	speed = speedFactor * Math.sqrt(DE(px,py,pz))
 	for(i=0; i<4; i++){
     	if(movePressed[i]){
 			px += (move[i][1]*Math.cos(ah)-move[i][0]*Math.sin(ah))*speed * Math.cos(av)
@@ -170,7 +214,7 @@ function update(){
 	}
 }
 
-var ONE_FRAME_TIME = 1000 / 60 ;
+var ONE_FRAME_TIME = 1000 / 10 ;
 var mainloop = function() {
 	update()
 }
