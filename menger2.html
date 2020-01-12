@@ -13,9 +13,7 @@
 <body>
 <div id="nav-placeholder"></div>
 
-<h1> Menger 1 </h1>
-
-<p> Also check out <a href="https://thedukevin.github.io/menger2.html">Menger 2</a> and <a href="https://thedukevin.github.io/menger3.html">Menger 3</a>. </p>
+<h1> Menger 2 </h1>
 
 <canvas id="canvas" width="700" height="600"> Your Browser does not support canvases :( </canvas>
 
@@ -71,7 +69,7 @@ function DE(x,y,z){
 	for(let i=0; i<iteration; i++){
 		v = [v[0]*3,v[1]*3,v[2]*3]
 		dr = dr/3
-		v = fold(v[0],v[1],v[2],0,2,1)
+		v = fold(v[0],v[1],v[2],2,0,1)
 		v = [v[0],v[1],v[2]-2]
 		v = fold(v[0],v[1],v[2],-1,0,0)
 		v = [v[0]+2,v[1],v[2]]
@@ -80,7 +78,7 @@ function DE(x,y,z){
 		v = fold(v[0],v[1],v[2],1,0,1)
 		v = fold(v[0],v[1],v[2],1,1,0)
 		v = [v[0]-2,v[1],v[2]]
-		v = fold(v[0],v[1],v[2],1,0.1,0)
+		v = fold(v[0],v[1],v[2],1,0,0)
 		v = [v[0]-1,v[1],v[2]]
 		v = fold(v[0],v[1],v[2],1,0,0)
 		v = [v[0]-1,v[1],v[2]]
