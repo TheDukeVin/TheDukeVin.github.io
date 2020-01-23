@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gpu.js/1.10.4/gpu.min.js"></script>
+<title> Passion Lol </title>
+
+</head>
+
+<body>
+
+<h1> Neato </h1>
+<canvas id="canvas" width="700" height="600"> Your Browser does not support canvases :( </canvas>
+<canvas id="canvas2" width="700" height="600"> Your Browser does not support canvases :( </canvas>
+
+<script>
+
+windx = 700
+windy = 600
+
+const canvas = document.getElementById('canvas');
+const canvas2 = document.getElementById('canvas2');
+
+pi = Math.PI
+
+
+const gpu = new GPU({
+  canvas: canvas,
+  mode: 'gpu'
+})
+
+
+const render = gpu.createKernel(function(windx,windy) {
+	let x = this.thread.x
+	let y = this.thread.y
+	let ca = 4*(x/windx-0.5)
+	let cb = 4*(y/windy-0.5)
+	//Calculate iterations
+	let xa = 0
+	let xb = 0
+	let nxa = 0
+	let nxb = 0
+	let result = -1
+	for(let i=0; i<100; i++){
+		nxa = xa*xa-xb*xb+ca
+		nxb = 2*xa*xb+cb
+		xa = nxa
+		xb = nxb
+		if(xa*xa+xb*xb > 4){
+			result = i
+			break
+		}
+	}
+	if(result == -1){
+		this.color(0,0,0)
+	}
+	else{
+		this.color(1,1,1)
+	}
+},)
+  .setOutput([windx, windy])
+  .setGraphical(true)
+
+ctx = canvas2.getContext('2d')
+
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color
+	ctx.fillRect(sx,sy,l,w)
+}
+
+function fillLine(color,sx,sy,ex,ey){
+	ctx.beginPath()
+	ctx.lineWidth = 1
+	ctx.strokeStyle = color
+	ctx.moveTo(sx,sy)
+	ctx.lineTo(ex,ey)
+	ctx.stroke()
+}
+
+document.addEventListener("mousemove",moveHandler);
+
+x = 0
+y = 0
+
+function moveHandler(event){
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+	x = 4*(mousex/windx-0.5)
+	y = 4*(mousey/windy-0.5)
+}
+
+function update(){
+	render(windx,windy)
+	fillRect("#fff",0,0,windx,windy)
+	kx = 0
+	ky = 0
+	for(i=0; i<1000; i++){
+		fillCirc("#000",(kx/4+0.5)*windx,(ky/4+0.5)*windy,2)
+		nkx = kx*kx-ky*ky + x
+		nky = 2*kx*ky + y
+		fillLine("#000",(kx/4+0.5)*windx,(ky/4+0.5)*windy,(nkx/4+0.5)*windx,(nky/4+0.5)*windy)
+		kx = nkx
+		ky = nky
+		if(kx*kx+ky*ky > 4){
+			break
+		}
+	}
+}
+
+var ONE_FRAME_TIME = 1000 / 20 ;
+var mainloop = function() {
+	update()
+}
+setInterval( mainloop, ONE_FRAME_TIME );
+
+
+</script>
+</html>

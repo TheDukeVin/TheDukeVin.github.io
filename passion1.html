@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title> Passion Stuff </title>
+
+</head>
+
+<body>
+
+<h1> Nice stuff </h1>
+<canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
+
+<script>
+
+windx = 700
+windy = 600
+
+const canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d')
+
+pi = Math.PI
+
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color
+	ctx.fillRect(sx,sy,l,w)
+}
+
+document.addEventListener("mousemove",moveHandler);
+
+x = 0
+
+function moveHandler(event){
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+	x = 4*(mousey/windy-0.5)
+}
+
+function update(){
+	fillRect("#fff",0,0,windx,windy)
+	k = 0
+	inc = 2
+	horz = 0
+	for(i=0; i<1000; i++){
+		fillCirc("#000",horz,(k/4+0.5)*windy,1)
+		k = k*k+x
+		horz += inc
+		inc *= 0.995
+		if(k > 2){
+			break
+		}
+	}
+}
+
+var ONE_FRAME_TIME = 1000 / 40 ;
+var mainloop = function() {
+	update()
+}
+setInterval( mainloop, ONE_FRAME_TIME );
+
+
+</script>
+</html>
