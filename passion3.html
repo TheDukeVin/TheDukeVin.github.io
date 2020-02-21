@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title> Passion Stuff </title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gpu.js/1.10.4/gpu.min.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<h1> Demo 3 </h1>
+
+<canvas id="canvas" width="700" height="600"> Your Browser does not support canvases :( </canvas>
+
+
+<script>
+
+
+windx = 700
+windy = 600
+
+px = -10 // Player position
+py = 0
+pz = 0
+ah = 0 // Player view angle
+av = 0
+
+speedFactor = 0.1
+
+pi = Math.PI
+
+iteration = 9
+
+const canvas = document.getElementById('canvas');
+
+const gpu = new GPU({
+  canvas: canvas,
+  mode: 'gpu'
+})
+
+function fold(x,y,z,nx,ny,nz){
+	let n = Math.sqrt(nx*nx+ny*ny+nz*nz)
+	nx = nx/n
+	ny = ny/n
+	nz = nz/n
+	let t = x*nx+y*ny+z*nz
+	if(t<0){
+		return [x-2*t*nx,y-2*t*ny,z-2*t*nz]
+	}
+	return [x,y,z]
+}
+
+function DE(x,y,z){
+	let dx = Math.abs(x)-1
+	let dy = Math.abs(y)-1
+	let dz = Math.abs(z)-1
+	let d1 = Math.max(dx,Math.max(dy,dz))
+	let d2 = Math.sqrt((x-1)*(x-1)+(y-2)*(y-2)+(z-1)*(z-1)) - 1.5
+	return Math.min(d1,d2)
+}
+
+gpu.addFunction(fold,{returnType: 'Array(3)'})
+gpu.addFunction(DE)
+
+const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av,maxStep,minDistProp,iteration) {
+	let maxDist = 100
+	let hRange = 0.8
+	let vRange = 0.6
+	
+	let x = this.thread.x
+	let y = this.thread.y
+	let hRot = x/windx*2*hRange-hRange
+	let vRot = vRange-y/windy*2*vRange
+	let rx = Math.cos(hRot) // Initialize ray vector
+	let ry = Math.sin(hRot)
+	let rz = 0
+	let holdx = rx * Math.cos(vRot+av) //Orient ray vector
+	let holdy = ry
+	let holdz = rx * Math.sin(vRot+av)
+	rx = holdx
+	ry = holdy
+	rz = holdz
+	holdx = rx * Math.cos(ah) - ry * Math.sin(ah)
+	holdy = ry * Math.cos(ah) + rx * Math.sin(ah)
+	holdz = rz
+	rx = holdx
+	ry = holdy
+	rz = holdz
+	
+	let mx = px //Marched position
+	let my = py
+	let mz = pz
+	
+	let dx = 0 //Initialize a bunch of variables. Will be changed later
+	let dy = 0
+	let dz = 0
+	let dist = 0
+	let steps = maxStep
+	
+	for(let i=0; i<maxStep; i++){
+		dist = DE(mx,my,mz)
+		mx += dist * rx
+		my += dist * ry
+		mz += dist * rz
+		dx = mx-px
+		dy = my-py
+		dz = mz-pz
+		if(dist < minDistProp*Math.sqrt(dx*dx+dy*dy+dz*dz)){
+			steps = i
+			break
+		}
+		if(dist > maxDist){
+			break
+		}
+	}
+	let k = 0
+	if(steps != maxStep){
+		if(steps < 50) k = 1-steps / 50
+		else k=0
+		this.color(k,k,k)
+	}
+	else{
+		this.color(1,1,1)
+	}
+	
+})
+  .setOutput([windx, windy])
+  .setGraphical(true)
+
+document.addEventListener("mousemove",moveHandler)
+document.addEventListener("keydown",keydownHandler);
+document.addEventListener("keyup",keyupHandler);
+canvas.onclick = function () { canvas.requestPointerLock() }
+
+
+movePressed = [false,false,false,false]
+keyMove = ["KeyS","KeyW","KeyD","KeyA"]
+move = [[0,-1],[0,1],[1,0],[-1,0]]
+
+
+function keydownHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	movePressed[i] = true;
+		}
+	}
+	if(key == "KeyZ"){
+		iteration += 1
+	}
+	if(key == "KeyX"){
+		iteration -= 1
+	}
+	if(key == "KeyR"){
+		if(renderMode == 0) renderMode = 1
+		if(renderMode == 2) renderMode = 0
+	}
+}
+
+function keyupHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	movePressed[i] = false;
+		}
+	}
+}
+
+function moveHandler(event){
+	ah += event.movementX*0.005
+	av += event.movementY*0.0025
+	if(av > pi/2){
+		av = pi/2
+	}
+	if(av < -pi/2){
+		av = -pi/2
+	}
+}
+
+renderMode = 0
+
+function update(){
+	if(renderMode == 0){
+		render(windx,windy,px,py,pz,ah,av,200,0.002,iteration)
+	}
+	if(renderMode == 1){
+		render(windx,windy,px,py,pz,ah,av,2000,0.0004,iteration)
+		renderMode = 2
+	}
+	speed = speedFactor * DE(px,py,pz)
+	for(i=0; i<4; i++){
+    	if(movePressed[i]){
+			px += (move[i][1]*Math.cos(ah)-move[i][0]*Math.sin(ah))*speed * Math.cos(av)
+			py += (move[i][1]*Math.sin(ah)+move[i][0]*Math.cos(ah))*speed * Math.cos(av)
+        }
+    }
+	if(movePressed[1]){
+		pz += Math.sin(av) * speed
+		
+	}
+	if(movePressed[0]){
+		pz -= Math.sin(av) * speed
+	}
+}
+
+var ONE_FRAME_TIME = 1000 / 10 ;
+var mainloop = function() {
+	update()
+}
+setInterval( mainloop, ONE_FRAME_TIME );
+  
+</script>
+</html>
