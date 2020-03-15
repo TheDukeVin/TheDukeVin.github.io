@@ -28,6 +28,10 @@ Click on the screen to lock the mouse. Then, simply move the mouse to rotate. Pr
 
 <script>
 
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
 windx = 700
 windy = 600
 
@@ -475,7 +479,7 @@ function update(){
     }
 }
 
-var ONE_FRAME_TIME = 1000 / 30 ;
+var ONE_FRAME_TIME = 1000 / 20 ;
 var mainloop = function() {
 	update()
 }
