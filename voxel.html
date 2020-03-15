@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gpu.js/1.10.4/gpu.min.js"></script>
+
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+
+<body>
+<div id="nav-placeholder"></div>
+
+<h1> Minecraft 0 </h1>
+
+<canvas id="canvas" width="700" height="600"> Your Browser does not support canvases :( </canvas>
+
+
+<h2> How to play </h2>
+
+<p>
+Click on the screen to lock the mouse. Then, simply move the mouse to rotate. Press <b>a,s,d,f</b> to move around. Click on a block to place a block next to it. Press <b>t</b> to toggle between placing blocks and removing blocks. Don't remove all the blocks!
+</p>
+
+<script>
+
+windx = 700
+windy = 600
+
+worldx = 30
+worldy = 30
+worldz = 30
+
+px = 10 // Player position
+py = 15
+pz = 15
+ah = 0 // Player view angle
+av = 0
+
+pi = Math.PI
+
+speed = 0.15
+
+world = []
+
+for(i=0; i<worldx; i++){
+	world[i] = []
+	for(j=0; j<worldy; j++){
+		world[i][j] = []
+		for(k=0; k<worldz; k++){
+			world[i][j][k] = 0
+		}
+	}
+}
+
+world[15][15][15] = 1
+
+const canvas = document.getElementById('canvas');
+
+const gpu = new GPU({
+  canvas: canvas,
+  mode: 'gpu'
+})
+
+const render = gpu.createKernel(function(windx,windy,px,py,pz,ah,av,world) {
+	let hRange = 0.6
+	let vRange = 0.4
+    let worldx = 30
+	let worldy = 30
+	let worldz = 30
+    
+	let x = this.thread.x
+	let y = this.thread.y
+	
+	let hRot = x/windx*2*hRange-hRange
+	let vRot = vRange-y/windy*2*vRange
+	let rx = Math.cos(hRot) // Initialize ray vector
+	let ry = Math.sin(hRot)
+	let rz = 0
+	let holdx = rx * Math.cos(vRot+av) //Orient ray vector
+	let holdy = ry
+	let holdz = rx * Math.sin(vRot+av)
+	rx = holdx
+	ry = holdy
+	rz = holdz
+	holdx = rx * Math.cos(ah) - ry * Math.sin(ah)
+	holdy = ry * Math.cos(ah) + rx * Math.sin(ah)
+	holdz = rz
+	rx = holdx
+	ry = holdy
+	rz = holdz
+    
+	let dir = 0
+	let mx = 0
+	let my = 0
+	let mz = 0
+	let dist = 0
+	let minDist = 0
+    let dist1 = 1000
+    let dist2 = 1000
+    let dist3 = 1000
+	
+	//find the x
+	if(rx<0){
+		dir = -1
+		mx = Math.floor(px)
+	}
+	else{
+		dir = 1
+		mx = Math.floor(px)+1
+	}
+	while(true){
+    	if(rx == 0){
+        	break
+        }
+		dist = Math.abs((mx-px)/rx)
+		my = Math.floor(py + dist*ry)
+		mz = Math.floor(pz + dist*rz)
+        
+		if(0>mx || mx>=worldx){
+			break
+		}
+        
+		if(0>my || my>=worldy){
+			break
+		}
+		if(0>mz || mz>=worldz){
+			break
+		}
+		if(world[mx][my][mz] == 1 || world[mx-1][my][mz] == 1){
+        	dist1 = dist
+			break
+        }
+		mx += dir
+	}
+	
+    //find the y
+	if(ry<0){
+		dir = -1
+		my = Math.floor(py)
+	}
+	else{
+		dir = 1
+		my = Math.floor(py)+1
+	}
+	while(true){
+    	if(ry == 0){
+        	break
+        }
+		dist = Math.abs((my-py)/ry)
+		mx = Math.floor(px + dist*rx)
+		mz = Math.floor(pz + dist*rz)
+        
+		if(0>mx || mx>=worldx){
+			break
+		}
+		if(0>my || my>=worldy){
+			break
+		}
+		if(0>mz || mz>=worldz){
+			break
+		}
+		if(world[mx][my][mz] == 1 || world[mx][my-1][mz] == 1){
+        	dist2 = dist
+			break
+        }
+		my += dir
+	}
+	
+	//find the z
+	if(rz<0){
+		dir = -1
+		mz = Math.floor(pz)
+	}
+	else{
+		dir = 1
+		mz = Math.floor(pz)+1
+	}
+	while(true){
+    	if(rz == 0){
+        	break
+        }
+		dist = Math.abs((mz-pz)/rz)
+		mx = Math.floor(px + dist*rx)
+		my = Math.floor(py + dist*ry)
+        
+		if(0>mx || mx>=worldx){
+			break
+		}
+		if(0>my || my>=worldy){
+			break
+		}
+		if(0>mz || mz>=worldz){
+			break
+		}
+		if(world[mx][my][mz] == 1 || world[mx][my][mz-1] == 1){
+        	dist3 = dist
+			break
+        }
+		mz += dir
+	}
+	minDist = Math.min(dist1,Math.min(dist2,dist3))
+    if(minDist == dist1){
+    	this.color(1,0,0)
+    }
+    if(minDist == dist2){
+    	this.color(0,1,0)
+    }
+    if(minDist == dist3){
+    	this.color(0,0,1)
+    }
+	if(minDist == 1000){
+		this.color(1,1,1)
+	}
+	if((x-windx/2)*(x-windx/2) + (y-windy/2)*(y-windy/2) < 9){
+		this.color(0,0,0)
+	}
+})
+  .setOutput([windx, windy])
+  .setGraphical(true)
+
+document.addEventListener("mousemove",moveHandler)
+document.addEventListener("click",clickHandler)
+document.addEventListener("keydown",keydownHandler)
+document.addEventListener("keyup",keyupHandler)
+canvas.onclick = function () { canvas.requestPointerLock() }
+
+
+movePressed = [false,false,false,false]
+keyMove = ["KeyS","KeyW","KeyD","KeyA"]
+move = [[0,-1],[0,1],[1,0],[-1,0]]
+
+mode = 0
+
+function keydownHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	movePressed[i] = true;
+		}
+	}
+	if(key == "KeyT"){
+		mode = 1-mode
+	}
+}
+
+function keyupHandler(event){
+	key = event.code
+    event.preventDefault()
+	for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	movePressed[i] = false;
+		}
+	}
+}
+
+function moveHandler(event){
+	ah += event.movementX*0.01
+	av += event.movementY*0.005
+	if(av > pi/2){
+		av = pi/2
+	}
+	if(av < -pi/2){
+		av = -pi/2
+	}
+}
+
+function clickHandler(event){
+    
+	let x = windx/2
+	let y = windy/2
+	let hRot = 0
+	let vRot = 0
+	let rx = Math.cos(hRot) // Initialize ray vector
+	let ry = Math.sin(hRot)
+	let rz = 0
+	let holdx = rx * Math.cos(vRot+av) //Orient ray vector
+	let holdy = ry
+	let holdz = rx * Math.sin(vRot+av)
+	rx = holdx
+	ry = holdy
+	rz = holdz
+	holdx = rx * Math.cos(ah) - ry * Math.sin(ah)
+	holdy = ry * Math.cos(ah) + rx * Math.sin(ah)
+	holdz = rz
+	rx = holdx
+	ry = holdy
+	rz = holdz
+    
+    let dist1 = 1000
+    let dist2 = 1000
+    let dist3 = 1000
+	
+	//find the x
+	if(rx<0){
+		dirx = -1
+		mx = Math.floor(px)
+	}
+	else{
+		dirx = 1
+		mx = Math.floor(px)+1
+	}
+	while(true){
+    	if(rx == 0){
+        	break
+        }
+		dist = Math.abs((mx-px)/rx)
+		my = Math.floor(py + dist*ry)
+		mz = Math.floor(pz + dist*rz)
+        
+		if(0>mx || mx>=worldx){
+			break
+		}
+        
+		if(0>my || my>=worldy){
+			break
+		}
+		if(0>mz || mz>=worldz){
+			break
+		}
+		if(world[mx][my][mz] == 1 || world[mx-1][my][mz] == 1){
+        	dist1 = dist
+			c1mx = mx
+			c1my = my
+			c1mz = mz
+			if(world[mx-1][my][mz] == 1){
+				c1mx = mx-1
+			}
+			break
+        }
+		mx += dirx
+	}
+	
+    //find the y
+	if(ry<0){
+		diry = -1
+		my = Math.floor(py)
+	}
+	else{
+		diry = 1
+		my = Math.floor(py)+1
+	}
+	while(true){
+    	if(ry == 0){
+        	break
+        }
+		dist = Math.abs((my-py)/ry)
+		mx = Math.floor(px + dist*rx)
+		mz = Math.floor(pz + dist*rz)
+        
+		if(0>mx || mx>=worldx){
+			break
+		}
+		if(0>my || my>=worldy){
+			break
+		}
+		if(0>mz || mz>=worldz){
+			break
+		}
+		if(world[mx][my][mz] == 1 || world[mx][my-1][mz] == 1){
+        	dist2 = dist
+			c2mx = mx
+			c2my = my
+			c2mz = mz
+			if(world[mx][my-1][mz] == 1){
+				c2my = my-1
+			}
+			break
+        }
+		my += diry
+	}
+	
+	//find the z
+	if(rz<0){
+		dirz = -1
+		mz = Math.floor(pz)
+	}
+	else{
+		dirz = 1
+		mz = Math.floor(pz)+1
+	}
+	while(true){
+    	if(rz == 0){
+        	break
+        }
+		dist = Math.abs((mz-pz)/rz)
+		mx = Math.floor(px + dist*rx)
+		my = Math.floor(py + dist*ry)
+        
+		if(0>mx || mx>=worldx){
+			break
+		}
+		if(0>my || my>=worldy){
+			break
+		}
+		if(0>mz || mz>=worldz){
+			break
+		}
+		if(world[mx][my][mz] == 1 || world[mx][my][mz-1] == 1){
+        	dist3 = dist
+			c3mx = mx
+			c3my = my
+			c3mz = mz
+			if(world[mx][my][mz-1] == 1){
+				c3mz = mz-1
+			}
+			break
+        }
+		mz += dirz
+	}
+	minDist = Math.min(dist1,Math.min(dist2,dist3))
+	if(minDist == 1000){
+		return
+	}
+	if(mode == 0){
+		if(minDist == dist1){
+			world[c1mx-dirx][c1my][c1mz] = 1
+		}
+		if(minDist == dist2){
+			world[c2mx][c2my-diry][c2mz] = 1
+		}
+		if(minDist == dist3){
+			world[c3mx][c3my][c3mz-dirz] = 1
+		}
+	}
+    if(mode == 1){
+		if(minDist == dist1){
+			world[c1mx][c1my][c1mz] = 0
+		}
+		if(minDist == dist2){
+			world[c2mx][c2my][c2mz] = 0
+		}
+		if(minDist == dist3){
+			world[c3mx][c3my][c3mz] = 0
+		}
+	}
+}
+
+function update(){
+	render(windx,windy,px,py,pz,ah,av,world)
+	for(i=0; i<4; i++){
+    	if(movePressed[i]){
+			px += (move[i][1]*Math.cos(ah)-move[i][0]*Math.sin(ah))*speed * Math.cos(av)
+			py += (move[i][1]*Math.sin(ah)+move[i][0]*Math.cos(ah))*speed * Math.cos(av)
+        }
+    }
+	if(movePressed[1]){
+		pz += Math.sin(av) * speed
+	}
+	if(movePressed[0]){
+		pz -= Math.sin(av) * speed
+	}
+    if(px < 0){
+    	px = 0
+    }
+    if(px > worldx-0.1){
+    	px = worldx-0.1
+    }
+    if(py < 0){
+    	py = 0
+    }
+    if(py > worldy-0.1){
+    	py = worldy-0.1
+    }
+    if(pz < 0){
+    	pz = 0
+    }
+    if(pz > worldz-0.1){
+    	pz = worldz-0.1
+    }
+}
+
+var ONE_FRAME_TIME = 1000 / 30 ;
+var mainloop = function() {
+	update()
+}
+setInterval( mainloop, ONE_FRAME_TIME );
+  
+</script>
+
+</body>
+
+</html>
+
+
+
+
+
+
+
