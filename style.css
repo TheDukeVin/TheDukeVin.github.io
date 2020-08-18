@@ -30,6 +30,7 @@ p {
 	font-family: "Calibri";
 	font-size: 16px;
 }
+
 .image {
   display: block;
   width: 75%;
@@ -37,6 +38,7 @@ p {
   margin-right: auto;
   padding-bottom: 70px;
 }
+
 .panel {
   margin-left: auto;
   margin-right: auto;
