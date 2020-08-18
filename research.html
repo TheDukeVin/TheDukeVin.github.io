@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> The Duke Vin </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+/* Create two equal columns that floats next to each other */
+.column {
+  float: left;
+  width: 50%;
+  padding: 50px;
+  text-align: left;
+}
+
+.columnI {
+  float: left;
+  width: 50%;
+  padding-top: 150px;
+  text-align: left;
+}
+
+/* Clear floats after the columns */
+.block:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.image {
+  display: block;
+  width: 75%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 70px;
+}
+
+
+
+
+</style>
+
+</head>
+
+<body>
+
+<div id="nav-placeholder"></div>
+
+
+<h1>Research Paper - "Fast-growing Sequence Inspired by TREE(k)"</h1>
+<p>Personally, I am very interested in research, since the idea of exploring the unknown is something I find very fascinating. Also, research is an incremental process spanning several millennia, so being a researcher connects you to a long history of human progress. Research is the process of expanding the domain of knowledge of the human species, which is what fundamentally drives progress in society.
+</p>
+<p>
+While watching a video “The Enormous TREE(3)” from the Numberphile series, I was fascinated by how fast the “tree sequence” can grow. This sequence is not well-understood though, so I decided to investigate the problem by creating a novel sequence of tuples.
+</p>
+<p>
+I studied the maximum length of such a sequence and it turns out the sequence grows very fast. It is remarkable to see how the results can be expressed using Knuth’s up-arrow notation and the recursive Ackermann function, and that it is associated with Eulerian numbers.
+</p>
+<p>
+It was a difficult process learning how to structure proofs from scratch into publication, but overall I thought it was a rewarding process. 
+You can find my paper here: <a href="https://www.tandfonline.com/doi/abs/10.1080/07468342.2020.1680227"> https://www.tandfonline.com/doi/abs/10.1080/07468342.2020.1680227</a>
+</p>
+<p>
+This is me giving a talk about my paper at a graduate program at Cal State Fullerton:
+</p>
+
+<img src="images/talk.jpg" class="image">
+
+<hr>
+
+<h1>Breakthrough Video</h1>
+<p>Any mathematician loves fractals. They’re a perfect symbol for the beauty of mathematics. It’s a way to derive complexity from simplicity, and it represents a deep connection between nature and mathematics. One of the first things I wanted to do when I started to code was to create the Mandelbrot Set, a mathematical fractal known for its immense variety of complex patterns. I first tried writing code in Python Turtle, but it took hours to render a single image. I tried using Pygame, which was significantly faster, taking a few seconds to render an image. What settled it all, though, was the Javascript GPU, which was able to render the Mandelbrot set at 60 frames per second. This dramatic improvement in rendering speed encouraged me to make a variety of other fractals such as Julia Sets and 3D fractals.
+</p>
+<p>
+When I heard of the Breakthrough Junior Challenge, I decided to make a fun video explaining fractals to a general audience. The video was limited to three minutes, which was sad since I could literally go on hours about these topics. Still, it was a cool opportunity to share these ideas with a broader community.
+</p>
+<p>
+Watch my video here: <a href="https://www.youtube.com/watch?v=p55DiT4cqlo"> https://www.youtube.com/watch?v=p55DiT4cqlo </a>
+</p>
+<p>
+Also, explore the Mandelbrot Set for yourself by visiting the <b>"Mandelbrot Zoom"</b> tab on this website. Visit the <b>"3D renders"</b> tab to explore some 3D fractals.
+</p>
+
+<img src="images/juliapic5.JPG" class="image">
+
+<script>
+
+$(function(){
+  $("#nav-placeholder").load("nav.html");
+});
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
