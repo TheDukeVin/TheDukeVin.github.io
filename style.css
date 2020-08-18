@@ -1,10 +1,18 @@
+* {
+  box-sizing: border-box;
+}
+
 h1 {
-	margin-left: 50px;
+	margin-left: auto;
+	margin-right: auto;
+	width: 75%;
 	font-family: "Calibri";
-	font-size: 50px;
+	font-size: 40px;
 }
 h2 {
-	margin-left: 50px;
+	margin-left: auto;
+	margin-right: auto;
+	width: 75%;
 	font-family: "Calibri";
 }
 h3 {
@@ -12,7 +20,16 @@ h3 {
 	font-family: "Calibri";
 }
 p {
-	margin-left: 50px;
+	margin-left: auto;
+	margin-right: auto;
+	width: 75%;
+	padding-bottom: 10px;
 	font-family: "Calibri";
 	font-size: 16px;
+}
+.panel {
+  margin-left: auto;
+  margin-right: auto;
+  width: 75%;
+  padding-bottom: 10px;
 }
