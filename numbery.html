@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> Kevin Du's Website </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div id="nav-placeholder"></div>
+
+<h1>Numbery Puzzle</h1>
+
+<div class="panel">
+<canvas id="canvas" width="500" height="500"> Your Browser does not support canvases :( </canvas>
+</div>
+
+<h2> How to play </h2>
+
+<p>
+Click the boxes to shoot circles. Make there be the same number of circles on both sides of the line. When you're done, click <b>Check</b>.
+</p>
+
+<script>
+
+var canvas = document.getElementById('canvas')
+var ctx = canvas.getContext('2d')
+
+windx = 500
+windy = 500
+marginx = 50
+marginy = 30
+
+circSize = 10
+machSize = 50
+machH = 400
+navSize = 20
+lineThick = 5
+
+pi = Math.PI
+
+fric = .99
+checkPause = 500
+restartPause = 1000
+
+
+colors = ["#0af","#af0","#e0e"]
+BG = "#fff"
+lineC = "#000"
+textC = "#000"
+tubeC = "#333"
+buttonC = "#afa"
+
+
+levels = []
+
+levels.push({
+	numColorsD: 1,
+    numCircsD: [[3],[0]],
+    circsD: [[[[100,100],[250,117],[140,300]]],[[]]],
+    divLineD: 300,
+    numMachsD: 1,
+    machUnitsD: [1],
+    machsD: [[400,[1,0]]]
+})
+
+levels.push({
+	numColorsD: 1,
+    numCircsD: [[4],[0]],
+    circsD: [[[[150,150],[200,200],[250,370],[100,400]]],[[]]],
+    divLineD: 300,
+    numMachsD: 1,
+    machUnitsD: [2],
+    machsD: [[400,[1,0],[1,0]]]
+})
+
+levels.push({
+	numColorsD: 1,
+    numCircsD: [[5],[2]],
+    circsD: [[[[234,321],[100,239],[250,156],[170,200],[104,200]]],
+    [[[400,100],[450,300]]]],
+    divLineD: 300,
+    numMachsD: 1,
+    machUnitsD: [1],
+    machsD: [[400,[1,0]]]
+})
+
+levels.push({
+	numColorsD: 1,
+    numCircsD: [[1],[10]],
+    circsD: [[[[100,100]]],
+    [[[350,100],[350,150],[350,200],[350,250],[350,300],[450,100],[450,150],[450,200],[450,250],[450,300]]]],
+    divLineD: 300,
+    numMachsD: 1,
+    machUnitsD: [3],
+    machsD: [[100,[0,0],[0,0],[0,0]]]
+})
+
+levels.push({
+	numColorsD: 1,
+    numCircsD: [[0],[5]],
+    circsD: [[[]],[[[450,100],[450,150],[450,200],[450,250],[450,300]]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [2,1],
+    machsD: [[100,[0,0],[0,0]],[350,[1,0]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[2,0],[0,3]],
+    circsD: [[[[150,150],[230,300],[100,234]],[]],
+    [[],[[350,200],[400,100],[380,400]]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [1,1],
+    machsD: [[400,[1,0]],[100,[0,1]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[2,4],[0,2]],
+    circsD: [[[[150,190],[230,300]],[[50,50],[200,100],[114,150],[80,300]]],
+    [[],[[350,200],[400,100]]]],
+    divLineD: 300,
+    numMachsD: 1,
+    machUnitsD: [2],
+    machsD: [[400,[1,0],[1,1]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[0,0],[0,2]],
+    circsD: [[[],[]],[[],[[350,200],[400,100]]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [2,1],
+    machsD: [[100,[0,0],[0,1]],[350,[1,0]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[3,1],[0,2]],
+    circsD: [[[[150,100],[200,100],[250,100]],[[100,200]]],
+    [[],[[400,100],[350,100]]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [2,1],
+    machsD: [[400,[1,0],[1,1]],[100,[0,1]]]
+})
+
+levels.push({
+	numColorsD: 1,
+    numCircsD: [[1],[0]],
+    circsD: [[[[100,100]]],[[]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [4,3],
+    machsD: [[50,[0,0],[0,0],[0,0],[0,0]],[320,[1,0],[1,0],[1,0]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[1,0],[0,5]],
+    circsD: [[[[150,100]],[]],
+    [[],[[400,100],[400,150],[400,200],[400,250],[400,300]]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [2,2],
+    machsD: [[100,[0,0],[0,1]],[250,[0,1],[1,0]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[0,1],[2,0]],
+    circsD: [[[],[[150,100]]],[[[400,100],[450,100]],[]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [2,3],
+    machsD: [[100,[0,0],[0,1]],[350,[1,0],[1,1],[1,1]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[0,0],[7,5]],
+    circsD: [[[],[]],
+    [[[430,50],[430,100],[430,150],[430,200],[430,250],[430,300],[430,350]],
+    [[470,50],[470,100],[470,150],[470,200],[470,250]]]],
+    divLineD: 400,
+    numMachsD: 2,
+    machUnitsD: [3,3],
+    machsD: [[50,[0,0],[0,1],[0,1]],[220,[0,0],[0,0],[0,1]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[5,0],[0,2]],
+    circsD: [[[[50,100],[50,150],[50,200],[50,250],[50,300]],[]],
+    [[],[[350,100],[350,150]]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [3,3],
+    machsD: [[100,[0,0],[0,1],[0,1]],[350,[1,1],[1,0],[1,0]]]
+})
+
+levels.push({
+	numColorsD: 2,
+    numCircsD: [[0,3],[0,0]],
+    circsD: [[[],[[50,100],[50,150],[50,200]]],[[],[]]],
+    divLineD: 300,
+    numMachsD: 2,
+    machUnitsD: [3,2],
+    machsD: [[100,[0,0],[0,0],[0,1]],[350,[1,1],[1,0]]]
+})
+
+levels.push({
+	numColorsD: 3,
+    numCircsD: [[1,0,3],[0,2,0]],
+    circsD: [[[[50,50]],[],[[100,300],[150,234],[200,345]]],
+    [[],[[350,240],[400,100]],[]]],
+    divLineD: 300,
+    numMachsD: 3,
+    machUnitsD: [1,1,1],
+    machsD: [[100,[0,1]],[350,[1,0]],[450,[1,2]]]
+})
+
+levels.push({
+	numColorsD: 3,
+    numCircsD: [[3,0,0],[0,0,0]],
+    circsD: [[[[50,50],[50,100],[50,150]],[],[]],[[],[],[]]],
+    divLineD: 300,
+    numMachsD: 3,
+    machUnitsD: [2,2,1],
+    machsD: [[100,[0,1],[0,2]],[320,[1,0],[1,1]],[450,[1,2]]]
+})
+
+levels.push({
+	numColorsD: 3,
+    numCircsD: [[0,0,1],[3,0,0]],
+    circsD: [[[],[],[[100,150]]],[[[350,50],[350,100],[350,150]],[],[]]],
+    divLineD: 300,
+    numMachsD: 3,
+    machUnitsD: [2,2,2],
+    machsD: [[50,[0,0],[0,1]],[170,[0,0],[0,2]],[350,[1,1],[1,2]]]
+})
+
+levels.push({
+	numColorsD: 3,
+    numCircsD: [[0,0,0],[3,5,6]],
+    circsD: [[[],[],[]],[[[430,50],[430,100],[430,150]],
+    [[430,200],[430,250],[430,300],[430,350],[430,400]],
+    [[470,50],[470,100],[470,150],[470,200],[470,250],[470,300]]]],
+    divLineD: 400,
+    numMachsD: 3,
+    machUnitsD: [2,2,2],
+    machsD: [[50,[0,0],[0,1]],[170,[0,0],[0,2]],[290,[0,1],[0,2]]]
+})
+
+levels.push({
+	numColorsD: 1,
+    numCircsD: [[1],[0]],
+    circsD: [[[[100,100]]],[[]]],
+    divLineD: 300,
+    numMachsD: 1,
+    machUnitsD: [2],
+    machsD: [[250,[0,0],[1,0]]]
+})
+
+var numColors,numCircs,divLine,numMachs,machUnits,machs,checkMode,checkTime,solved,checkDur,wonUpdate,circsSave
+
+level = 2
+maxLevel = level
+
+function setLevel(level){
+    numColors = levels[level].numColorsD
+    divLine = levels[level].divLineD
+    numMachs = levels[level].numMachsD
+    machUnits = levels[level].machUnitsD
+    machs = levels[level].machsD
+    checkMode = false
+    checkTime = 0
+    solved = false
+    wonUpdate = false
+    circs = []
+    numCircs = []
+    for(side=0; side<2; side++){
+    	circs[side] = []
+        numCircs[side] = []
+        for(c=0; c<numColors; c++){
+        	circs[side][c] = []
+            numCircs[side][c] = levels[level].numCircsD[side][c]
+            for(i=0; i<numCircs[side][c]; i++){
+            	circs[side][c][i] = []
+            	circs[side][c][i][0] = levels[level].circsD[side][c][i][0]
+            	circs[side][c][i][1] = levels[level].circsD[side][c][i][1]
+                circs[side][c][i][2] = 0
+                circs[side][c][i][3] = 0
+                circs[side][c][i][4] = 0
+            }
+        }
+    }
+    for(m=0; m<numMachs; m++){
+    	for(i=0; i<machUnits[m]; i++){
+        	machs[m][i+1][2] = 0
+        }
+    }
+}
+
+setLevel(level)
+
+
+function getTime(){
+	d = new Date()
+	return d.getTime()
+}
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color
+	ctx.fillRect(sx,sy,l,w)
+}
+
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function fillLine(color,sx,sy,ex,ey,thick){
+	ctx.beginPath()
+	ctx.lineWidth = thick
+	ctx.strokeStyle = color
+	ctx.moveTo(sx,sy)
+	ctx.lineTo(ex,ey)
+	ctx.stroke()
+}
+
+function fillText(text,color,size,x,y){
+	ctx.font = String(size)+"px Arial"
+	ctx.fillStyle = color
+	ctx.textAlign = "center"
+	ctx.fillText(text,x,y)
+}
+
+function drawNav(){
+	if(level>0){
+		fillRect(buttonC, 30,windy-marginy, 140, marginy)
+		fillText("Previous Level",textC,navSize,100,windy-marginy/4)
+	}
+	if(level<maxLevel){
+		fillRect(buttonC, windx/2-60,windy-marginy, 120, marginy)
+		fillText("Next Level",textC,navSize,windx/2,windy-marginy/4)
+	}
+	fillRect(buttonC, windx-160,windy-marginy, 120, marginy)
+	fillText("Restart Level",textC,navSize,windy-100,windy-marginy/4)
+	fillText("Level "+(level+1).toString(),textC,50,windx/2,marginy*2)
+	fillRect(buttonC, windx-100,0, 120, marginy)
+	fillText("Check",textC,navSize,windx-marginx,marginy*3/4)
+}
+
+function drawTube(x,y){
+	ctx.fillStyle = tubeC
+    ctx.beginPath()
+    ctx.moveTo(x+machSize/5,y-10)
+    ctx.lineTo(x+machSize*4/5,y-10)
+    ctx.lineTo(x+machSize*2/3,y)
+    ctx.lineTo(x+machSize/3,y)
+    ctx.closePath()
+	ctx.fill()
+}
+
+function drawWin(){
+	fillText("Yay!",textC,50,windx/2,windy/2)
+}
+
+function draw(){
+	fillRect(BG,0,0,windx,windy)
+    fillLine(lineC,divLine,0,divLine,windy,lineThick)
+	for(side=0; side<2; side++){
+    	for(c=0; c<numColors; c++){
+        	for(i=0; i<numCircs[side][c]; i++){
+            	circ = circs[side][c][i]
+                if(circ[4] == 0){
+                	fillCirc(colors[c],circ[0],circ[1],circSize)
+                }
+            }
+        }
+    }
+    for(m=0; m<numMachs; m++){
+    	for(i=0; i<machUnits[m]; i++){
+        	unit = machs[m][i+1]
+            x = machs[m][0]+i*machSize
+        	fillRect(colors[unit[1]],x,machH,machSize,machSize)
+        	drawTube(x,machH)
+        }
+    }
+}
+
+
+
+
+
+canvas.addEventListener("click",clickHandler);
+
+function abs(x){
+	if(x<0){return -x}
+	return x
+}
+
+function max(x,y){
+	if(x<y){return y}
+    return x
+}
+
+function min(x,y){
+	if(x<y){return x}
+    return y
+}
+
+function check(){
+	checkDur = 0
+    solved = true
+	for(c=0; c<numColors; c++){
+    	checkDur = max(checkDur, min(numCircs[0][c],numCircs[1][c]))
+        if(numCircs[0][c] != numCircs[1][c]){
+        	solved = false
+        }
+    }
+    circsSave = []
+    for(side=0; side<2; side++){
+    	circsSave[side] = []
+        for(c=0; c<numColors; c++){
+        	circsSave[side][c] = []
+            for(i=0; i<numCircs[side][c]; i++){
+            	circsSave[side][c][i] = []
+            	circsSave[side][c][i][0] = circs[side][c][i][0]
+            	circsSave[side][c][i][1] = circs[side][c][i][1]
+            	circsSave[side][c][i][2] = circs[side][c][i][2]
+            	circsSave[side][c][i][3] = circs[side][c][i][3]
+            }
+        }
+    }
+}
+
+function clickHandler(event){
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+    if(checkMode == false && machH < mousey && mousey < machH + machSize){
+    	for(m=0; m<numMachs; m++){
+        	xpos = machs[m][0]
+        	if(xpos < mousex && mousex < xpos + machUnits[m]*machSize){
+            	for(i=0; i<machUnits[m]; i++){
+                	unit = machs[m][i+1]
+                	circs[unit[0]][unit[1]].push([xpos+machSize/2+i*machSize,machH+machSize/2,0,-(2.0+unit[2])/2,0])
+                    numCircs[unit[0]][unit[1]]++
+                    unit[2]++
+                }
+            }
+        }
+    }
+    if(!checkMode && 0<mousey && mousey<marginy*2 && windx-marginx*2<mousex && mousex<windx){
+        check()
+    	checkMode = true
+        checkTime = getTime()
+    }
+    if(mousey>windy-marginy){
+		if(level<maxLevel && abs(mousex-windx/2)<100){
+			setLevel(level+1)
+			level += 1
+		}
+		if(level>0 && mousex<200){
+			setLevel(level-1)
+			level -= 1
+		}
+		if(mousex>windx-200){
+			setLevel(level)
+		}
+	}
+}
+
+
+
+
+
+function update(){
+	draw()
+    drawNav()
+    for(side=0; side<2; side++){
+        for(c=0; c<numColors; c++){
+            for(i=0; i<numCircs[side][c]; i++){
+                circs[side][c][i][0] += circs[side][c][i][2]
+                circs[side][c][i][1] += circs[side][c][i][3]
+                if(checkMode == false){
+                	circs[side][c][i][2] *= fric
+                	circs[side][c][i][3] *= fric
+                }
+                else{
+                	if(getTime()-checkTime < i*checkPause){
+                    	circs[side][c][i][2] *= fric
+                		circs[side][c][i][3] *= fric
+                    }
+                	else if(i<numCircs[1-side][c]){
+                    	circ = circs[side][c][i]
+                        circ2 = circs[1-side][c][i]
+                    	diffx = circ[0] - circ2[0]
+                    	diffy = circ[1] - circ2[1]
+                        linediff = circ[0]-divLine
+                        if(diffx*(2*side-1)<=0){
+                        	circ[4] = 1
+                        }
+                        midy = circ[1] + diffy*linediff/diffx
+                        circ[2] -= 0.0001*linediff
+                        circ[3] += 0.0001*(circ[1]-midy)
+                    }
+                }
+            }
+        }
+    }
+    if(checkMode){
+    	if(solved && getTime()-checkTime > checkDur*checkPause){
+            if(level == maxLevel && !wonUpdate){
+                maxLevel += 1
+                wonUpdate = true
+            }
+            drawWin()
+        }
+        else if(getTime()-checkTime > checkDur*checkPause+restartPause){
+        	circs = []
+    		for(side=0; side<2; side++){
+        		circs[side] = []
+        		for(c=0; c<numColors; c++){
+            		circs[side][c] = []
+            		for(i=0; i<numCircs[side][c]; i++){
+                		circs[side][c][i] = []
+                		circs[side][c][i][0] = circsSave[side][c][i][0]
+                		circs[side][c][i][1] = circsSave[side][c][i][1]
+                		circs[side][c][i][2] = circsSave[side][c][i][2]
+                		circs[side][c][i][3] = circsSave[side][c][i][3]
+                		circs[side][c][i][4] = 0
+            		}
+        		}
+    		}
+            checkMode = false
+        }
+    }
+}
+ 
+var ONE_FRAME_TIME = 1000 / 240 ;
+var mainloop = function() {
+	update()
+};
+setInterval( mainloop, ONE_FRAME_TIME );
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
