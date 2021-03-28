@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+</head>
+
+<body>
+
+<canvas id="canvas" width="770" height="770"> Your Browser does not support canvases :( </canvas>
+
+
+<script>
+
+var canvas = document.getElementById('canvas')
+var ctx = canvas.getContext('2d')
+
+windx = 770
+windy = 770
+
+xGap = 15
+yGap = 50
+xMargin = 50
+yMargin = 300
+nodeSize = 7
+connWidth = 3
+
+speed = 7
+
+pi = Math.PI
+
+cSpace = "#fff"
+cText = "#000"
+cConn = "#000"
+
+cNode = ["#000","#f00"]
+
+class Node{
+	constructor(nodeType){
+    	this.nodeType = nodeType
+        this.connections = []
+        this.height = 0
+        this.position = 0
+        this.parent = -1
+        this.removed = false
+    }
+}
+
+var nodes = []
+
+function setConn(parent, child){
+	nodes[parent].connections.push(child)
+    nodes[child].parent = parent
+}
+
+function backConn(parent, child){
+	nodes[parent].connections.unshift(child)
+	nodes[child].parent = parent
+}
+
+//starting tree
+
+
+var startHeight = 4
+
+
+nodes[0] = new Node(0)
+for(var i=0; i<startHeight; i++){
+	nodes[i+1] = new Node(0)
+    setConn(i,i+1)
+}
+
+/*
+nodes[0] = new Node(0)
+nodes[1] = new Node(1)
+nodes[2] = new Node(1)
+nodes[3] = new Node(1)
+setConn(0,1)
+setConn(0,2)
+setConn(0,3)
+*/
+
+var currPos = 0
+var currHeight = 0
+var numCopies = 0
+
+function computePosAtIndex(index){
+    nodes[index].height = currHeight
+    var numChild = nodes[index].connections.length
+	if(numChild == 0){
+        nodes[index].position = currPos
+        currPos++
+        return
+    }
+    currHeight++
+    for(var i=0; i<numChild; i++){
+    	computePosAtIndex(nodes[index].connections[i])
+    }
+    currHeight--
+    var firstConn = nodes[index].connections[0]
+    var lastConn = nodes[index].connections[numChild-1]
+    nodes[index].position = (nodes[firstConn].position + nodes[lastConn].position) / 2
+}
+
+function computePos(){
+	currPos = 0
+    currHeight = 0
+    computePosAtIndex(0)
+}
+
+computePos()
+
+function clone(index){
+	var addIndex = nodes.length
+	nodes[addIndex] = new Node(nodes[index].nodeType)
+    for(var i=0; i<nodes[index].connections.length; i++){
+    	var newIndex = nodes.length
+    	nodes[addIndex].connections.push(newIndex)
+    	clone(nodes[index].connections[i])
+        nodes[newIndex].parent = addIndex
+    }
+}
+
+function hydraOperation(index){
+	if(nodes[index].connections.length != 0){
+    	return
+    }
+	numCopies += 1
+    var parentIndex = nodes[index].parent
+    var connIndex = nodes[parentIndex].connections.indexOf(index)
+    nodes[parentIndex].connections.splice(connIndex,1)
+    nodes[index].removed = true
+    if(nodes[index].nodeType == 1){
+    	var trace = index
+        while(nodes[trace].nodeType != 0){
+        	trace = nodes[trace].parent
+        }
+        var newIndex = nodes.length
+        clone(trace)
+        setConn(parentIndex,newIndex)
+		//backConn(parentIndex,newIndex)
+        return
+    }
+    if(parentIndex != 0){
+    	for(var i=0; i<numCopies; i++){
+        	var newIndex = nodes.length
+        	clone(parentIndex)
+            setConn(nodes[parentIndex].parent,newIndex)
+        }
+    }
+}
+
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color
+	ctx.fillRect(sx,sy,l,w)
+}
+ 
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function fillText(text,color,size,x,y){
+	ctx.font = String(size)+"px Arial"
+	ctx.fillStyle = color
+	ctx.textAlign = "center"
+	ctx.fillText(text,x,y)
+}
+
+function fillLine(color,thick,sx,sy,ex,ey){
+	ctx.beginPath()
+	ctx.strokeStyle = color
+	ctx.lineWidth = thick
+	ctx.moveTo(sx,sy)
+	ctx.lineTo(ex,ey)
+	ctx.stroke()
+}
+
+function xShift(x){
+	return x * xGap + xMargin
+}
+
+function yShift(y){
+	return y * yGap + yMargin
+}
+
+function draw(){
+	fillRect(cSpace,0,0,windx,windy)
+    for(var i=0; i<nodes.length; i++){
+    	if(nodes[i].removed){
+        	continue
+        }
+    	fillCirc(cNode[nodes[i].nodeType], xShift(nodes[i].position) , yShift(nodes[i].height), nodeSize)
+        for(var j=0; j<nodes[i].connections.length; j++){
+        	newNode = nodes[i].connections[j]
+        	fillLine(cConn, connWidth, xShift(nodes[i].position) , yShift(nodes[i].height), xShift(nodes[newNode].position), yShift(nodes[newNode].height))
+        }
+    }
+    fillText("Number of copies: "+(numCopies+1).toString(), cText, 30, windx/2, windy-30)
+}
+
+document.addEventListener("keydown",keydownHandler);
+document.addEventListener("keyup",keyupHandler);
+document.addEventListener("click",clickHandler);
+canvas.addEventListener("wheel",wheelHandler);
+
+keyMove = ["ArrowDown","ArrowUp","ArrowRight","ArrowLeft"]
+pressed = [false,false,false,false]
+dir = [[0,1],[0,-1],[1,0],[-1,0]]
+
+function keydownHandler(event){
+	key = event.code
+    event.preventDefault()
+    for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	pressed[i] = true;
+		}
+	}
+	if(key == "KeyA"){
+		var currNode = 0
+		while(nodes[currNode].connections.length != 0){
+			currNode = nodes[currNode].connections[nodes[currNode].connections.length-1]
+		}
+		hydraOperation(currNode)
+		computePos()
+	}
+}
+
+function keyupHandler(event){
+	key = event.code
+    for(i=0; i<4; i++){
+		if(keyMove[i] == key){
+        	pressed[i] = false;
+		}
+	}
+}
+
+function squ(x){
+	return x*x
+}
+
+function clickHandler(event){
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+    for(var i=0; i<nodes.length; i++){
+    	if(nodes[i].removed){
+        	continue
+        }
+    	if(squ(xShift(nodes[i].position) - mousex) + squ(yShift(nodes[i].height) - mousey) < squ(nodeSize)){
+        	hydraOperation(i)
+            computePos()
+            break
+        }
+    }
+}
+
+function wheelHandler(event){
+	event.preventDefault();
+	xGap *= 1 - event.deltaY * 0.0003
+	yGap *= 1 - event.deltaY * 0.0003
+	nodeSize *= 1 - event.deltaY * 0.0003
+	connWidth *= 1 - event.deltaY * 0.0003
+	xMargin *= 1 - event.deltaY * 0.0003
+	yMargin *= 1 - event.deltaY * 0.0003
+}
+
+function update(){
+	draw()
+    for(i=0; i<4; i++){
+    	if(pressed[i]){
+        	xMargin -= dir[i][0] * speed
+            yMargin -= dir[i][1] * speed
+        }
+    }
+}
+
+var ONE_FRAME_TIME = 1000 / 20 ;
+var mainloop = function() {
+	update()
+};
+setInterval( mainloop, ONE_FRAME_TIME );
+
+</script>
+
+</body>
+</html>
