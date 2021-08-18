@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> Kevin Du's Website </title>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<div id="nav-placeholder"></div>
+
+<h1>Numbery Puzzle</h1>
+
+<div class="panel">
+<canvas id="canvas" width="600" height="500"> Your Browser does not support canvases :( </canvas>
+</div>
+
+<h2> How to play </h2>
+
+<p>
+Click the boxes to shoot circles. Make there be the same number of circles on both sides of the line. When you're done, click <b>Check</b>.
+</p>
+
+<script>
+
+var canvas = document.getElementById('canvas')
+var ctx = canvas.getContext('2d')
+
+windx = 600
+windy = 500
+marginx = 50
+marginy = 30
+
+circSize = 10
+machSizeFactor = 4
+machH = 400
+navSize = 20
+lineThick = 5
+gapSize = 30
+transTime = 1000
+
+pi = Math.PI
+
+
+numColors = 2
+numSizes = 3
+
+colors = ["#0af","#af0","#e0e"]
+sizes = [10,15,20]
+BG = "#fff"
+lineC = "#000"
+textC = "#000"
+tubeC = "#333"
+buttonC = "#afa"
+
+
+divLine = 300
+
+
+levels = []
+
+levels.push({
+	startNums: [[7,0],[0,0]],
+    machines: [[450,[0,0,1]]] // unit is sizeType, colorType, side.
+})
+
+levels.push({
+	startNums: [[14,0],[0,0]],
+    machines: [[450,[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[15,0],[0,0]],
+    machines: [[400,[0,0,1],[0,0,1],[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[37,0],[0,0]],
+    machines: [[350,[1,0,1]], [450,[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[53,0],[21,0]],
+    machines: [[350,[1,0,1]], [450,[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[22,0],[8,0]],
+    machines: [[350,[1,0,1]], [450,[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[88,0],[0,0]],
+    machines: [[350,[1,0,1],[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[121,0],[0,0]],
+    machines: [[350,[1,0,1],[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[123,0],[8,0]],
+    machines: [[320,[2,0,1]], [420,[1,0,1]], [500,[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[73,0],[25,0]],
+    machines: [[350,[1,0,1]], [450,[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[542,0],[218,0]],
+    machines: [[320,[2,0,1]], [420,[1,0,1]], [500,[0,0,1]]]
+})
+
+levels.push({
+	startNums: [[6,4],[0,0]],
+    machines: [[350,[0,0,1]], [450,[0,1,1]]]
+})
+
+levels.push({
+	startNums: [[0,0],[12,0]],
+	machines: [[150,[0,0,0],[0,1,0]], [350,[0,1,1]]]
+})
+
+level = 12
+maxLevel = level
+
+
+function squ(x){
+	return x*x
+}
+
+function tenexp(n){
+	x = 1
+	for(var i=0; i<n; i++){
+		x *= 10
+	}
+	return x
+}
+
+function getDigit(num,n){
+	return Math.floor(num / tenexp(n)) % 10
+}
+
+function getTime(){
+	d = new Date()
+	return d.getTime()
+}
+
+function fillRect(color,sx,sy,l,w){
+	ctx.fillStyle = color
+	ctx.fillRect(sx,sy,l,w)
+}
+
+function fillCirc(color,x,y,r){
+	ctx.beginPath()
+	ctx.arc(x,y,r,0,2*pi)
+	ctx.fillStyle = color
+	ctx.fill()
+}
+
+function fillLine(color,sx,sy,ex,ey,thick){
+	ctx.beginPath()
+	ctx.lineWidth = thick
+	ctx.strokeStyle = color
+	ctx.moveTo(sx,sy)
+	ctx.lineTo(ex,ey)
+	ctx.stroke()
+}
+
+function fillText(text,color,size,x,y){
+	ctx.font = String(size)+"px Arial"
+	ctx.fillStyle = color
+	ctx.textAlign = "center"
+	ctx.fillText(text,x,y)
+}
+
+
+
+
+
+
+class Pos{
+	constructor(x,y){
+		this.x = x
+		this.y = y
+	}
+	
+	shift(digit, sizeType){
+    	digit = digit%10
+    	this.x -= sizeType * gapSize * 2.5
+		if(digit < 5){
+			this.y += digit*gapSize
+		}
+		else{
+			this.x -= gapSize
+			this.y += (digit-5)*gapSize
+		}
+	}
+	
+	copy(p){
+		this.x = p.x
+		this.y = p.y
+	}
+    
+    equals(p){
+    	return (this.x == p.x) && (this.y == p.y)
+    }
+}
+
+class Dot{
+	constructor(sizeType, finalPos, startPos, startTime){
+    	this.sizeType = sizeType
+        this.finalPos = finalPos
+        this.startPos = startPos
+        this.startTime = startTime
+        this.invisible = false
+        this.activated = false
+    }
+    
+    draw(colorType){
+    	if(this.invisible){
+        	return
+        }
+		if(this.startPos == null){
+			fillCirc(colors[colorType], this.finalPos.x, this.finalPos.y, sizes[this.sizeType])
+		}
+    	else{
+			var t = getTime() - this.startTime
+			var weight = squ((transTime-t)/transTime)
+			var dx = this.startPos.x - this.finalPos.x
+			var dy = this.startPos.y - this.finalPos.y
+			var xpos = this.finalPos.x + dx * weight
+			var ypos = this.finalPos.y + dy * weight
+			fillCirc(colors[colorType], xpos, ypos, sizes[this.sizeType])
+			if(t > transTime){
+				this.startPos = null
+			}
+		}
+    }
+}
+
+class Decimal{
+	constructor(colorType, initNum, position, side){
+    	this.colorType = colorType
+        this.position = position
+        this.side = side
+        this.number = initNum
+        
+        var numHold = initNum
+        var i,j
+        this.dots = []
+        for(i=0; i<numSizes; i++){
+        	this.dots[i] = []
+            for(j=0; j<numHold%10; j++){
+				var dotPos = new Pos(position.x,position.y)
+				dotPos.shift(j,i)
+				this.dots[i][j] = new Dot(i,dotPos, null, getTime())
+			}
+			numHold = Math.floor(numHold/10)
+        }
+    }
+    
+    draw(){
+    	var i,j
+        for(i=0; i<numSizes; i++){
+			for(j=0; j<this.dots[i].length; j++){
+				this.dots[i][j].draw(this.colorType)
+			}
+            
+			if(this.dots[i].length >= 10 && this.dots[i][9].startPos == null){
+            	if(this.dots[i][9].activated){
+                    for(j=0; j<this.dots[i+1].length; j++){
+                    	if(this.dots[i+1][j].finalPos.equals(this.dots[i][9].finalPos)){
+                        	this.dots[i+1][j].invisible = false
+                            break
+                        }
+                    }
+                	for(j=0; j<10; j++){
+                    	this.dots[i].shift()
+                    }
+                    continue
+                }
+            	//determine if we need to merge
+            	var needMerge = true
+            	for(j=0; j<10; j++){
+                	if(this.dots[i][j].invisible){
+                    	needMerge = false
+                	}
+            	}
+                if(!needMerge){
+                	continue
+                }
+                
+                var mergeDotPos = new Pos(this.position.x, this.position.y)
+                mergeDotPos.shift(this.dots[i+1].length,i+1)
+                var mergedDot = new Dot(i+1, mergeDotPos, null, getTime())
+                mergedDot.invisible = true
+                
+                this.dots[i+1].push(mergedDot)
+                
+				for(j=0; j<10; j++){
+					var dot = this.dots[i][j]
+					dot.startPos = new Pos(-1,-1)
+                    dot.startPos.copy(dot.finalPos)
+                    var newPos = new Pos(this.position.x, this.position.y)
+                    newPos.shift(this.dots[i+1].length-1,i+1)
+					dot.finalPos.copy(newPos)
+                    dot.startTime = getTime()
+				}
+                this.dots[i][9].activated = true
+			}
+        }
+    }
+	
+	add(sizeType, startPos){
+		var dotPos = new Pos(this.position.x,this.position.y)
+		dotPos.shift(this.dots[sizeType].length, sizeType)
+		this.number += tenexp(sizeType)
+		this.dots[sizeType].push(new Dot(sizeType, dotPos, startPos, getTime()))
+	}
+}
+
+
+
+
+var decimals, machines
+
+function setLevel(level){
+	decimals = []
+    for(s=0; s<2; s++){
+		decimals[s] = []
+		for(i=0; i<numColors; i++){
+			decimals[s][i] = new Decimal(i,levels[level].startNums[s][i],new Pos(200+s*300,50+gapSize*5*i),s)
+		}
+	}
+    machines = levels[level].machines
+}
+
+setLevel(level)
+
+function drawTube(x,y,machSize){
+	ctx.fillStyle = tubeC
+    ctx.beginPath()
+    ctx.moveTo(x+machSize/5,y-10)
+    ctx.lineTo(x+machSize*4/5,y-10)
+    ctx.lineTo(x+machSize*2/3,y)
+    ctx.lineTo(x+machSize/3,y)
+    ctx.closePath()
+	ctx.fill()
+}
+
+function drawWin(){
+	fillText("Yay!",textC,50,windx/2,windy/2)
+}
+
+function draw(){
+	fillRect(BG,0,0,windx,windy)
+    fillLine(lineC,divLine,0,divLine,windy,lineThick)
+	for(i=0; i<2; i++){
+		for(j=0; j<numColors; j++){
+			decimals[i][j].draw()
+		}
+	}
+	for(i=0; i<machines.length; i++){
+		sizeSum = 0
+		for(j=1; j<machines[i].length; j++){
+			unit = machines[i][j]
+			size = sizes[unit[0]] * machSizeFactor
+			xpos = machines[i][0] + sizeSum
+			fillRect(colors[unit[1]],xpos,machH,size,size)
+			sizeSum += size
+			drawTube(xpos,machH,size)
+		}
+	}
+}
+
+function drawNav(){
+	if(level>0){
+		fillRect(buttonC, 30,windy-marginy, 140, marginy)
+		fillText("Previous Level",textC,navSize,100,windy-marginy/4)
+	}
+	if(level<maxLevel){
+		fillRect(buttonC, windx/2-60,windy-marginy, 120, marginy)
+		fillText("Next Level",textC,navSize,windx/2,windy-marginy/4)
+	}
+	fillRect(buttonC, windx-160,windy-marginy, 120, marginy)
+	fillText("Restart Level",textC,navSize,windx-100,windy-marginy/4)
+	fillText("Level "+(level+1).toString(),textC,50,windx/2,marginy*2)
+}
+
+
+
+canvas.addEventListener("click",clickHandler);
+
+function abs(x){
+	if(x<0){return -x}
+	return x
+}
+
+function max(x,y){
+	if(x<y){return y}
+    return x
+}
+
+function min(x,y){
+	if(x<y){return x}
+    return y
+}
+
+function addMach(machIndex){
+	sizeSum = 0
+	for(i=1; i<machines[machIndex].length; i++){
+		unit = machines[machIndex][i]
+        size = sizes[unit[0]] * machSizeFactor
+		decimals[unit[2]][unit[1]].add(unit[0], new Pos(machines[machIndex][0] + sizeSum + size/2, machH + size/2))
+        sizeSum += size
+	}
+}
+
+function check(){
+	for(i=0; i<numColors; i++){
+    	if(decimals[0][i].number != decimals[1][i].number){
+        	return false
+        }
+    }
+    return true
+}
+
+function clickHandler(event){
+	rect = canvas.getBoundingClientRect();
+    mousex = event.clientX - rect.left;
+    mousey = event.clientY - rect.top;
+	for(i=0; i<machines.length; i++){
+		sizeSum = 0
+		for(j=1; j<machines[i].length; j++){
+			unit = machines[i][j]
+			size = sizes[unit[0]] * machSizeFactor
+			xpos = machines[i][0] + sizeSum
+			if(xpos < mousex && mousex < xpos + size && machH < mousey && mousey < machH + size){
+				addMach(i)
+				break
+			}
+			sizeSum += size
+		}
+	}
+    if(mousey>windy-marginy){
+		if(level<maxLevel && abs(mousex-windx/2)<100){
+			setLevel(level+1)
+			level += 1
+		}
+		if(level>0 && mousex<200){
+			setLevel(level-1)
+			level -= 1
+		}
+		if(mousex>windx-200){
+			setLevel(level)
+		}
+	}
+}
+
+
+
+
+
+function update(){
+	draw()
+    drawNav()
+    if(check()){
+    	drawWin()
+        if(level == maxLevel){
+        	maxLevel = level + 1
+        }
+    }
+}
+ 
+var ONE_FRAME_TIME = 1000 / 240 ;
+var mainloop = function() {
+	update()
+};
+setInterval( mainloop, ONE_FRAME_TIME );
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
